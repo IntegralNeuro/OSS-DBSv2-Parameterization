@@ -8,16 +8,15 @@ from .abbott_stjude import (
     AbbottStJudeDirectedModel,
     AbbottStJudeParameters,
 )
-from .boston_scientific_cartesia import (
-    BostonScientificCartesiaHXModel,
-    BostonScientificCartesiaParameters,
-    BostonScientificCartesiaXModel,
-)
 from .boston_scientific_vercise import (
     BostonScientificVerciseDirectedModel,
     BostonScientificVerciseDirectedParameters,
     BostonScientificVerciseModel,
     BostonScientificVerciseParameters,
+)
+from .best_electrode_ever import (
+    BestElectrodeEverParameters,
+    BestElectrodeEverModel
 )
 from .dixi_microtechniques import (
     DixiSEEGModel,
@@ -89,23 +88,14 @@ default_electrode_parameters = {
         contact_spacing=0.5,
         lead_diameter=1.3,
         total_length=450.0,
-    ),
-    "BostonScientificCartesiaX": BostonScientificCartesiaParameters(
+    ),  
+    "BestElectrodeEver": BestElectrodeEverParameters(
         tip_length=1.0,
-        contact_length=1.5,
-        contact_spacing=0.5,
+        contact_length=0.5,
+        contact_spacing=2.0,
         lead_diameter=1.3,
         total_length=450.0,
-        contacts_skipped=5.0,
-    ),
-    "BostonScientificCartesiaHX": BostonScientificCartesiaParameters(
-        tip_length=1.0,
-        contact_length=1.5,
-        contact_spacing=0.5,
-        lead_diameter=1.3,
-        total_length=450.0,
-        contacts_skipped=7.0,
-    ),
+    ),        
     "Medtronic3387": MedtronicParameters(
         tip_length=1.5,
         contact_length=1.5,
@@ -297,6 +287,15 @@ def BostonScientificVerciseDirected(
     """Boston Scientific Vercise Directed electrode."""
     parameters = default_electrode_parameters["BostonScientificVerciseDirected"]
     return BostonScientificVerciseDirectedModel(
+        parameters, rotation, direction, position
+    )
+
+def BestElectrodeEver(
+    rotation: float = 0, direction: tuple = (0, 0, 1), position: tuple = (0, 0, 0)
+):
+    """Best Electrode Ever electrode."""
+    parameters = default_electrode_parameters["BestElectrodeEver"]
+    return BestElectrodeEverModel(
         parameters, rotation, direction, position
     )
 
