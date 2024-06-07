@@ -10,7 +10,6 @@ from abc import ABC, abstractmethod
 from typing import Optional
 
 import h5py
-import neuron
 import numpy as np
 
 from .axon_models import AxonMorphologyMcNeal1976, AxonMorphologyMRG2002
