@@ -131,7 +131,7 @@
           },
           "MaxMeshSize": 1.0,
           "MaxMeshSizeEdge": 0.035
-        }             
+        }
       ]
     }
   ],
@@ -139,7 +139,7 @@
     {
       "Name": "BrainSurface",
       "Active": true,
-      "Current[A]": 0.00,
+      "Current[A]": 0.0,
       "Voltage[V]": 0.0
     }
   ],
@@ -247,8 +247,8 @@
   "FailFlag": "rh",
   "OutOfCore": false,
   "StimSets": {
-      "Active": false,
-      "StimSetsFile": "Current_protocols_0.csv"
+    "Active": false,
+    "StimSetsFile": "Current_protocols_0.csv"
   },
   "PathwayFile": "Allocated_axons_parameters.json"
 }
