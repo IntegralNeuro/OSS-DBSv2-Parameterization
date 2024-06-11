@@ -413,7 +413,6 @@ def main():
         args.tip_contact,
         args._n_contacts,
     )
-    # modify_electrode_python_file(args)
     input_dict = generate_input_dictionary_template()
     create_gui(input_dict)
 
@@ -474,32 +473,6 @@ def parse_args():
     )
 
     return parser.parse_args()
-
-
-def modify_electrode_python_file(args) -> None:
-    parameters_to_modify = {
-        "segment_contact_angle": args.segment_contact_angle,
-        "n_segments_per_level": args.n_segments_per_level,
-        "levels": args.levels,
-        "segmented_levels": args.segmented_levels,
-        "tip_contact": args.tip_contact,
-        "_n_contacts": args._n_contacts,
-    }
-
-    with open(_PYTHON_FILE_TO_MODIFY_FILE_PATH, "r") as file:
-        content = file.readlines()
-
-    for i, line in enumerate(content):
-        for param, new_value in parameters_to_modify.items():
-            if param in line:
-                if isinstance(new_value, bool):
-                    new_value = str(new_value).lower()
-                content[i] = f"{param} = {new_value}\n"
-
-    with open(_PYTHON_FILE_TO_MODIFY_FILE_PATH, "w") as file:
-        file.writelines(content)
-
-    print("Parameters modified successfully.")
 
 
 def create_gui(input_dict: dict) -> None:
