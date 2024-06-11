@@ -1,12 +1,17 @@
 import json
+import os
 import subprocess
 import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, ttk
+import argparse
 
 from hydra import compose, initialize  # type: ignore
 from omegaconf import OmegaConf  # type: ignore
 
+_PYTHON_FILE_TO_MODIFY_FILE_PATH = os.path.join(
+    "..\ossdbs", "electrodes", "best_electrode_ever.py"
+)
 _WINDOW_WIDTH = 1000
 _WINDOW_HEIGHT = 600
 
@@ -23,13 +28,8 @@ class ElectrodeGUI(tk.Tk):
         entries (dict): A dictionary to store the created entry widgets.
 
     Methods:
-        __init__(): Initializes the ElectrodeGUI object.
-        create_entry(): Creates an entry widget and returns it.
-        create_label(gui, text, pady): Creates a label widget and adds it to the GUI.
-        create_button(text, command, pady): Creates a button widget and adds it to the GUI.
-        create_label_and_entry(text, pady): Creates a label and an entry widget and adds them to the GUI.
-        get_entry_value(name): Returns the value entered in the entry widget with the given name.
-        show_input(entry): Displays a messagebox with the user's input from the given entry widget.
+        __init__(self, input_dict): Initializes the ElectrodeGUI object.
+        generate_fields_from_dict(self): Generates entry fields with labels based on the input dictionary.
     """
 
     def __init__(self, input_dict) -> None:
@@ -60,6 +60,7 @@ class ElectrodeGUI(tk.Tk):
         self.row_counter = 0
         self.entry_counter = 0
         self.key_iterator = 0
+        self.outputpath = ""
         self.reference_dict = input_dict
 
         self.title("OSS-DBS Parameter Modifier")
@@ -108,6 +109,26 @@ class ElectrodeGUI(tk.Tk):
         self.grid_columnconfigure(0, weight=1)
 
     def generate_fields_from_dict(self):
+        """
+        Generates entry fields with labels based on the input dictionary.
+
+        Returns:
+            None
+
+        Description:
+            - Iterates through the keys in the reference_dict.
+            - If the value associated with a key is a dictionary or list, creates a label for the key.
+            - If the value associated with a key is a dictionary, iterates through the secondary keys.
+            - If the value associated with a secondary key is a dictionary or list, creates a label for the secondary key.
+            - If the value associated with a secondary key is a dictionary, iterates through the tertiary keys.
+            - If the value associated with a tertiary key is a dictionary or list, creates a label for the tertiary key.
+            - If the value associated with a tertiary key is a dictionary, iterates through the quaternary keys.
+            - If the value associated with a quaternary key is a dictionary or list, creates a label for the quaternary key.
+            - If the value associated with a quaternary key is a dictionary, iterates through the quinary keys.
+            - If the value associated with a quinary key is a dictionary or list, creates a label for the quinary key.
+            - If the value associated with a quinary key is a dictionary, iterates through the senary keys.
+            - Creates a label and an entry widget for each senary key.
+        """
         secondary_key_index_counter = 0
         quaternary_key_index_counter = 0
         for key in self.reference_dict:
@@ -312,7 +333,6 @@ class ElectrodeGUI(tk.Tk):
 
         label.grid(row=self.row_counter, column=0, padx=5, pady=5, sticky="w")
         entry.grid(row=self.row_counter, column=1, padx=5, pady=5, sticky="ew")
-
         entry.insert(0, prefill)
         self.entries[text] = entry
         self.indexes[index] = entry
@@ -356,6 +376,12 @@ class ElectrodeGUI(tk.Tk):
             return bool(int(self.indexes[name].get()))
         elif original_type == "None":
             return None
+        elif name == "OutputPath_147":
+            self.outputpath = (
+                f"{self.indexes[name].get()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+            )
+            os.makedirs(self.outputpath, exist_ok=True)
+            return self.outputpath
         else:
             return type(original_type)(
                 self.indexes[name].get() if name in self.indexes else None
@@ -377,8 +403,103 @@ def main():
     This is the main function of the program.
     It generates an input dictionary template and creates a GUI using the input dictionary.
     """
+    args = parse_args()
+    print(
+        _PYTHON_FILE_TO_MODIFY_FILE_PATH,
+        args.segment_contact_angle,
+        args.n_segments_per_level,
+        args.levels,
+        args.segmented_levels,
+        args.tip_contact,
+        args._n_contacts,
+    )
+    # modify_electrode_python_file(args)
     input_dict = generate_input_dictionary_template()
     create_gui(input_dict)
+
+
+def parse_args():
+    """
+    Parse command line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed command line arguments.
+    """
+    parser = argparse.ArgumentParser(
+        description="Parameters for OSS-DBS JSON Generation"
+    )
+    parser.add_argument(
+        "-a",
+        "--segment_contact_angle",
+        type=float,
+        help="Segment contact angle",
+        required=False,
+        default=100.0,
+    )
+    parser.add_argument(
+        "-spl",
+        "--n_segments_per_level",
+        type=int,
+        help="Number of segments per level",
+        required=False,
+        default=3,
+    )
+    parser.add_argument(
+        "-l", "--levels", type=int, help="Number of levels", required=False, default=3
+    )
+    parser.add_argument(
+        "-sl",
+        "--segmented_levels",
+        type=int,
+        nargs="+",
+        help="Segmented levels",
+        required=False,
+        default=[1, 3],
+    )
+    parser.add_argument(
+        "-c",
+        "--tip_contact",
+        type=bool,
+        help="Tip contact",
+        required=False,
+        default=False,
+    )
+    parser.add_argument(
+        "-n",
+        "--_n_contacts",
+        type=int,
+        help="Number of contacts",
+        required=False,
+        default=7,
+    )
+
+    return parser.parse_args()
+
+
+def modify_electrode_python_file(args) -> None:
+    parameters_to_modify = {
+        "segment_contact_angle": args.segment_contact_angle,
+        "n_segments_per_level": args.n_segments_per_level,
+        "levels": args.levels,
+        "segmented_levels": args.segmented_levels,
+        "tip_contact": args.tip_contact,
+        "_n_contacts": args._n_contacts,
+    }
+
+    with open(_PYTHON_FILE_TO_MODIFY_FILE_PATH, "r") as file:
+        content = file.readlines()
+
+    for i, line in enumerate(content):
+        for param, new_value in parameters_to_modify.items():
+            if param in line:
+                if isinstance(new_value, bool):
+                    new_value = str(new_value).lower()
+                content[i] = f"{param} = {new_value}\n"
+
+    with open(_PYTHON_FILE_TO_MODIFY_FILE_PATH, "w") as file:
+        file.writelines(content)
+
+    print("Parameters modified successfully.")
 
 
 def create_gui(input_dict: dict) -> None:
@@ -409,7 +530,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
     Returns:
         None
     """
-    duplicate_screening_list = []
     universal_counter = 0
     secondary_key_index_counter = 0
     quaternary_key_index_counter = 0
@@ -446,9 +566,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                                                 quinary_key
                                             ]:
                                                 universal_counter += 1
-                                                duplicate_screening_list.append(
-                                                    f"{senary_key}_{universal_counter}"
-                                                )
                                                 output_dict[key][
                                                     secondary_key_index_counter
                                                 ][tertiary_key][
@@ -471,9 +588,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                                                 )
                                         elif quinary_key in gui.entries:
                                             universal_counter += 1
-                                            duplicate_screening_list.append(
-                                                f"{quinary_key}_{universal_counter}"
-                                            )
                                             output_dict[key][
                                                 secondary_key_index_counter
                                             ][tertiary_key][
@@ -494,9 +608,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
 
                                 elif quaternary_key in gui.entries:
                                     universal_counter += 1
-                                    duplicate_screening_list.append(
-                                        f"{quaternary_key}_{universal_counter}"
-                                    )
                                     if (
                                         output_dict[key][secondary_key_index_counter][
                                             tertiary_key
@@ -520,9 +631,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                                         )
                         elif tertiary_key in gui.entries:
                             universal_counter += 1
-                            duplicate_screening_list.append(
-                                f"{tertiary_key}_{universal_counter}"
-                            )
                             output_dict[key][secondary_key_index_counter][
                                 tertiary_key
                             ] = gui.get_index_value(
@@ -538,9 +646,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                         if isinstance(tertiary_key, int):
                             if secondary_key in gui.entries:
                                 universal_counter += 1
-                                duplicate_screening_list.append(
-                                    f"{secondary_key}_{universal_counter}"
-                                )
                                 output_dict[key][secondary_key] = [
                                     int(
                                         gui.get_index_value(
@@ -557,9 +662,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                                 if isinstance(quaternary_key, dict):
                                     for quinary_key in quaternary_key:
                                         universal_counter += 1
-                                        duplicate_screening_list.append(
-                                            f"{quinary_key}_{universal_counter}"
-                                        )
                                         output_dict[key][secondary_key][tertiary_key][
                                             quaternary_key_index_counter
                                         ][quinary_key] = gui.get_index_value(
@@ -573,9 +675,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                                     quaternary_key_index_counter += 1
                                 elif quaternary_key in gui.entries:
                                     universal_counter += 1
-                                    duplicate_screening_list.append(
-                                        f"{quaternary_key}_{universal_counter}"
-                                    )
                                     output_dict[key][secondary_key][tertiary_key][
                                         quaternary_key
                                     ] = gui.get_index_value(
@@ -587,9 +686,6 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                                 quaternary_key_index_counter = 0
                         elif tertiary_key in gui.entries:
                             universal_counter += 1
-                            duplicate_screening_list.append(
-                                f"{tertiary_key}_{universal_counter}"
-                            )
                             output_dict[key][secondary_key][tertiary_key] = (
                                 gui.get_index_value(
                                     f"{tertiary_key}_{universal_counter}",
@@ -600,17 +696,11 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                 elif secondary_key in gui.entries:
                     if output_dict[key][secondary_key] is None:
                         universal_counter += 1
-                        duplicate_screening_list.append(
-                            f"{secondary_key}_{universal_counter}"
-                        )
                         output_dict[key][secondary_key] = gui.get_index_value(
                             f"{secondary_key}_{universal_counter}", "None"
                         )
                     else:
                         universal_counter += 1
-                        duplicate_screening_list.append(
-                            f"{secondary_key}_{universal_counter}"
-                        )
                         output_dict[key][secondary_key] = gui.get_index_value(
                             f"{secondary_key}_{universal_counter}",
                             output_dict[key][secondary_key],
@@ -620,18 +710,16 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
         elif key in gui.entries:
             if output_dict[key] is None:
                 universal_counter += 1
-                duplicate_screening_list.append(f"{key}_{universal_counter}")
                 output_dict[key] = gui.get_index_value(
                     f"{key}_{universal_counter}", "None"
                 )
             else:
                 universal_counter += 1
-                duplicate_screening_list.append(f"{key}_{universal_counter}")
                 output_dict[key] = gui.get_index_value(
                     f"{key}_{universal_counter}", output_dict[key]
                 )
     # gui.destroy()
-    modify_json_parameters(output_dict)
+    modify_json_parameters(output_dict, gui.outputpath)
 
 
 def generate_input_dictionary_template() -> dict:
@@ -647,29 +735,36 @@ def generate_input_dictionary_template() -> dict:
     return data
 
 
-def modify_json_parameters(input_dict: dict) -> None:
+def modify_json_parameters(input_dict: dict, results_path: str) -> None:
     """
     Modifies the input dictionary and writes it to a JSON file.
 
     Args:
         input_dict (dict): The dictionary to be modified and written to a JSON file.
+        results_path (str): The path where the JSON file will be saved.
 
     Returns:
         None
     """
-    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-    file_path = f"generated_jsons/generated_oss-dbs_parameters_{current_time}.json"
+    file_path = f"{results_path}/generated_oss-dbs_parameters.json"
     with open(file_path, "w") as file:
         json.dump(input_dict, file, indent=2)
 
-    print(
-        f"JSON template data has been written to generated_oss-dbs_parameters_{current_time}.json"
-    )
+    print(f"JSON template data has been written to {file_path}")
 
     run_oss_dbs(file_path)
 
 
 def run_oss_dbs(file_path: str) -> None:
+    """
+    Runs the OSS-DBS command line tool with the specified file path.
+
+    Args:
+        file_path (str): The path to the input file.
+
+    Returns:
+        None
+    """
     print("Generating OSS-DBS output...")
     try:
         result = subprocess.run(["ossdbs", file_path], check=True)
