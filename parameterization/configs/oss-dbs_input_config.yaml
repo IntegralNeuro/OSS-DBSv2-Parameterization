@@ -10,13 +10,19 @@ oss_dbs_input_json:
         "z[mm]": 70
       Shape: "Ellipsoid"
     Electrodes:
-      - Name: "BestElectrodeEver"
+      - Name: "BestElectrodeEverCustom"
         CustomParameters:
           tip_length: 1.0
           contact_length: 0.5
           contact_spacing: 2.0
           lead_diameter: 1.3
           total_length: 350.0
+          segment_contact_angle: 100.0  # custom parameters {
+          n_segments_per_level: 3
+          levels: 3
+          segmented_levels: [1, 3]
+          tip_contact: false
+          _n_contacts: 10                # }
         "Rotation[Degrees]": -10.0
         Direction:
           "x[mm]": 0.0

@@ -50,6 +50,9 @@ class ElectrodeModel(ABC):
         norm = np.linalg.norm(direction)
         self._direction = tuple(direction / norm) if norm else (0, 0, 1)
 
+        print(parameters)
+        self._n_contacts = parameters._n_contacts
+
         self._boundaries = {"Body": "Body"}
         for idx in range(1, self._n_contacts + 1):
             self._boundaries[f"Contact_{idx}"] = f"Contact_{idx}"
@@ -66,7 +69,9 @@ class ElectrodeModel(ABC):
         """Check electrode parameters."""
         # Check to ensure that all parameters are at least 0
         for param in asdict(self._parameters).values():
-            if param < 0:
+            if isinstance(param, list):
+                pass
+            elif param < 0:
                 raise ValueError("Parameter values cannot be less than zero")
 
     @property

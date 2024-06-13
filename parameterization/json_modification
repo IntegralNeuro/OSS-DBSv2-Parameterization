@@ -1,17 +1,35 @@
+import argparse
 import json
 import os
+import re
 import subprocess
 import tkinter as tk
 from datetime import datetime
 from tkinter import messagebox, ttk
-import argparse
 
 from hydra import compose, initialize  # type: ignore
 from omegaconf import OmegaConf  # type: ignore
 
-_PYTHON_FILE_TO_MODIFY_FILE_PATH = os.path.join(
-    "..\ossdbs", "electrodes", "best_electrode_ever.py"
-)
+_CONTACT_DICT_CURRENT_TEMPLATE = {
+    "Contact_ID": 8,
+    "Active": True,
+    "Current[A]": 1.0,
+    "Voltage[V]": False,
+    "Floating": False,
+    "SurfaceImpedance[Ohmm]": {"real": 0.0, "imag": 0.0},
+    "MaxMeshSize": 1.0,
+    "MaxMeshSizeEdge": 0.035,
+}
+_CONTACT_DICT_FLOATING_TEMPLATE = {
+    "Contact_ID": 8,
+    "Active": False,
+    "Current[A]": 0.0,
+    "Voltage[V]": False,
+    "Floating": True,
+    "SurfaceImpedance[Ohmm]": {"real": 0.0, "imag": 0.0},
+    "MaxMeshSize": 1.0,
+    "MaxMeshSizeEdge": 0.035,
+}
 _WINDOW_WIDTH = 1000
 _WINDOW_HEIGHT = 600
 
@@ -45,7 +63,7 @@ class ElectrodeGUI(tk.Tk):
         Description:
             - Sets up the GUI window with the title, size, and position.
             - Initializes the entries dictionary to store the created entry widgets.
-            - Initializes the row_counter, entry_counter, and key_iterator variables.
+            - Initializes the row_counter and entry_counter variables.
             - Stores the reference_dict for later use.
             - Creates a frame for the canvas and scrollbar.
             - Adds a canvas and scrollbar to the frame.
@@ -59,7 +77,6 @@ class ElectrodeGUI(tk.Tk):
         super().__init__()
         self.row_counter = 0
         self.entry_counter = 0
-        self.key_iterator = 0
         self.outputpath = ""
         self.reference_dict = input_dict
 
@@ -138,9 +155,7 @@ class ElectrodeGUI(tk.Tk):
                     if isinstance(secondary_key, dict):
                         for tertiary_key in secondary_key:
                             if isinstance(
-                                self.reference_dict[key][secondary_key_index_counter][
-                                    tertiary_key
-                                ],
+                                self.reference_dict[key][secondary_key_index_counter][tertiary_key],
                                 (dict, list),
                             ):
                                 self.create_label(tertiary_key, level=2)
@@ -152,21 +167,15 @@ class ElectrodeGUI(tk.Tk):
                                             if isinstance(
                                                 self.reference_dict[key][
                                                     secondary_key_index_counter
-                                                ][tertiary_key][
-                                                    quaternary_key_index_counter
-                                                ][
+                                                ][tertiary_key][quaternary_key_index_counter][
                                                     quinary_key
                                                 ],
                                                 (dict, list),
                                             ):
                                                 self.create_label(quinary_key, level=4)
-                                                for senary_key in self.reference_dict[
-                                                    key
-                                                ][secondary_key_index_counter][
-                                                    tertiary_key
-                                                ][
-                                                    quaternary_key_index_counter
-                                                ][
+                                                for senary_key in self.reference_dict[key][
+                                                    secondary_key_index_counter
+                                                ][tertiary_key][quaternary_key_index_counter][
                                                     quinary_key
                                                 ]:
                                                     self.create_label_and_entry(
@@ -186,17 +195,15 @@ class ElectrodeGUI(tk.Tk):
                                                     quinary_key,
                                                     self.reference_dict[key][
                                                         secondary_key_index_counter
-                                                    ][tertiary_key][
-                                                        quaternary_key_index_counter
-                                                    ][
+                                                    ][tertiary_key][quaternary_key_index_counter][
                                                         quinary_key
                                                     ],
                                                 )
                                         quaternary_key_index_counter += 1
                                     elif (
-                                        self.reference_dict[key][
-                                            secondary_key_index_counter
-                                        ][tertiary_key][quaternary_key]
+                                        self.reference_dict[key][secondary_key_index_counter][
+                                            tertiary_key
+                                        ][quaternary_key]
                                         is None
                                     ):
                                         self.create_label_and_entry(
@@ -210,63 +217,53 @@ class ElectrodeGUI(tk.Tk):
                                     else:
                                         self.create_label_and_entry(
                                             quaternary_key,
-                                            self.reference_dict[key][
-                                                secondary_key_index_counter
-                                            ][tertiary_key][quaternary_key],
+                                            self.reference_dict[key][secondary_key_index_counter][
+                                                tertiary_key
+                                            ][quaternary_key],
                                         )
                             else:
                                 self.create_label_and_entry(
                                     tertiary_key,
-                                    self.reference_dict[key][
-                                        secondary_key_index_counter
-                                    ][tertiary_key],
+                                    self.reference_dict[key][secondary_key_index_counter][
+                                        tertiary_key
+                                    ],
                                 )
                         secondary_key_index_counter += 1
-                    elif isinstance(
-                        self.reference_dict[key][secondary_key], (dict, list)
-                    ):
+                    elif isinstance(self.reference_dict[key][secondary_key], (dict, list)):
                         self.create_label(secondary_key, level=1)
                         for tertiary_key in self.reference_dict[key][secondary_key]:
                             if isinstance(tertiary_key, int):
-                                for tertiary_key in self.reference_dict[key][
-                                    secondary_key
-                                ]:
-                                    self.create_label_and_entry(
-                                        secondary_key, tertiary_key
-                                    )
+                                for tertiary_key in self.reference_dict[key][secondary_key]:
+                                    self.create_label_and_entry(secondary_key, tertiary_key)
                             elif isinstance(
                                 self.reference_dict[key][secondary_key][tertiary_key],
                                 (dict, list),
                             ):
                                 self.create_label(tertiary_key, level=2)
-                                for quaternary_key in self.reference_dict[key][
-                                    secondary_key
-                                ][tertiary_key]:
+                                for quaternary_key in self.reference_dict[key][secondary_key][
+                                    tertiary_key
+                                ]:
                                     if isinstance(quaternary_key, dict):
                                         for quinary_key in quaternary_key:
                                             self.create_label_and_entry(
                                                 quinary_key,
                                                 self.reference_dict[key][secondary_key][
                                                     tertiary_key
-                                                ][quaternary_key_index_counter][
-                                                    quinary_key
-                                                ],
+                                                ][quaternary_key_index_counter][quinary_key],
                                             )
                                         quaternary_key_index_counter += 1
                                     else:
                                         self.create_label_and_entry(
                                             quaternary_key,
-                                            self.reference_dict[key][secondary_key][
-                                                tertiary_key
-                                            ][quaternary_key],
+                                            self.reference_dict[key][secondary_key][tertiary_key][
+                                                quaternary_key
+                                            ],
                                         )
                                     quaternary_key_index_counter = 0
                             else:
                                 self.create_label_and_entry(
                                     tertiary_key,
-                                    self.reference_dict[key][secondary_key][
-                                        tertiary_key
-                                    ],
+                                    self.reference_dict[key][secondary_key][tertiary_key],
                                 )
                     elif self.reference_dict[key][secondary_key] is None:
                         self.create_label_and_entry(
@@ -293,9 +290,7 @@ class ElectrodeGUI(tk.Tk):
             text (str): The text to display on the label.
             pady (int, optional): The padding on the y-axis. Defaults to 5.
         """
-        label = ttk.Label(
-            self.content_frame, text=text, font=f"Helvetica {12-level} bold"
-        )
+        label = ttk.Label(self.content_frame, text=text, font=f"Helvetica {12-level} bold")
         label.grid(row=self.row_counter, column=0, padx=5, pady=5, sticky="w")
         ttk.Separator(self.content_frame, orient="horizontal").grid(
             row=self.row_counter, column=1, sticky="ew"
@@ -328,7 +323,7 @@ class ElectrodeGUI(tk.Tk):
         """
         self.entry_counter += 1
         index = f"{text}_{self.entry_counter}"
-        label = ttk.Label(self.content_frame, text=index)
+        label = ttk.Label(self.content_frame, text=text)
         entry = ttk.Entry(self.content_frame)
 
         label.grid(row=self.row_counter, column=0, padx=5, pady=5, sticky="w")
@@ -372,20 +367,21 @@ class ElectrodeGUI(tk.Tk):
         Returns:
             str: The value entered in the entry widget, or None if the name is not found in the entries dictionary.
         """
-        if type(original_type) is bool:
+        if isinstance(original_type, bool):
             return bool(int(self.indexes[name].get()))
-        elif original_type == "None":
+        if isinstance(original_type, list):
+            integer_list = re.findall(r'\d+', self.indexes[name].get())
+            integer_list = [int(num) for num in integer_list]
+            return integer_list
+        if original_type == "None":
             return None
-        elif name == "OutputPath_147":
+        if name == "OutputPath_153":
             self.outputpath = (
                 f"{self.indexes[name].get()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             )
             os.makedirs(self.outputpath, exist_ok=True)
             return self.outputpath
-        else:
-            return type(original_type)(
-                self.indexes[name].get() if name in self.indexes else None
-            )
+        return type(original_type)(self.indexes[name].get() if name in self.indexes else None)
 
     def show_input(self, entry):
         """
@@ -403,17 +399,29 @@ def main():
     This is the main function of the program.
     It generates an input dictionary template and creates a GUI using the input dictionary.
     """
-    args = parse_args()
-    print(
-        _PYTHON_FILE_TO_MODIFY_FILE_PATH,
-        args.segment_contact_angle,
-        args.n_segments_per_level,
-        args.levels,
-        args.segmented_levels,
-        args.tip_contact,
-        args._n_contacts,
-    )
+    # args = parse_args()
+    # print(
+    #     _PYTHON_FILE_TO_MODIFY_FILE_PATH,
+    #     args.segment_contact_angle,
+    #     args.n_segments_per_level,
+    #     args.levels,
+    #     args.segmented_levels,
+    #     args.tip_contact,
+    #     args._n_contacts,
+    # )
     input_dict = generate_input_dictionary_template()
+    # _n_contacts = input_dict["Electrodes"][0]["CustomParameters"]["_n_contacts"]
+    # template_contacts = len(input_dict["Electrodes"][0]["Contacts"])
+    # contact_diff = _n_contacts - template_contacts
+    # print(_n_contacts, template_contacts, contact_diff)
+    # if contact_diff > 0:
+    #     for i in range(contact_diff + 1):
+    #         _CONTACT_DICT_TEMPLATE["Contact_ID"] = template_contacts + contact_iterator
+    #         input_dict["Electrodes"][0]["Contacts"].append(_CONTACT_DICT_TEMPLATE)
+    # elif contact_diff < 0:
+    #     for i in range(abs(contact_diff)):
+    #         input_dict["Electrodes"][0]["Contacts"].pop()
+    # print(input_dict)
     create_gui(input_dict)
 
 
@@ -424,9 +432,7 @@ def parse_args():
     Returns:
         argparse.Namespace: Parsed command line arguments.
     """
-    parser = argparse.ArgumentParser(
-        description="Parameters for OSS-DBS JSON Generation"
-    )
+    parser = argparse.ArgumentParser(description="Parameters for OSS-DBS JSON Generation")
     parser.add_argument(
         "-a",
         "--segment_contact_angle",
@@ -487,12 +493,12 @@ def create_gui(input_dict: dict) -> None:
     """
     electrode_gui = ElectrodeGUI(input_dict)
     electrode_gui.create_button(
-        "Generate", lambda: generate_output_json(electrode_gui, input_dict)
+        "Generate", lambda: generate_output_dict_from_gui(electrode_gui, input_dict)
     )
     electrode_gui.mainloop()
 
 
-def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
+def generate_output_dict_from_gui(gui: ElectrodeGUI, output_dict: dict) -> None:
     """
     Generate the output JSON by modifying the input dictionary based on the GUI entries.
 
@@ -516,101 +522,79 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                             output_dict[key][secondary_key_index_counter][tertiary_key],
                             (dict, list),
                         ):
-                            for quaternary_key in output_dict[key][
-                                secondary_key_index_counter
-                            ][tertiary_key]:
+                            for quaternary_key in output_dict[key][secondary_key_index_counter][
+                                tertiary_key
+                            ]:
                                 if isinstance(quaternary_key, dict):
                                     for quinary_key in quaternary_key:
                                         if isinstance(
-                                            output_dict[key][
-                                                secondary_key_index_counter
-                                            ][tertiary_key][
-                                                quaternary_key_index_counter
-                                            ][
-                                                quinary_key
-                                            ],
+                                            output_dict[key][secondary_key_index_counter][
+                                                tertiary_key
+                                            ][quaternary_key_index_counter][quinary_key],
                                             (dict, list),
                                         ):
                                             for senary_key in output_dict[key][
                                                 secondary_key_index_counter
-                                            ][tertiary_key][
-                                                quaternary_key_index_counter
-                                            ][
+                                            ][tertiary_key][quaternary_key_index_counter][
                                                 quinary_key
                                             ]:
                                                 universal_counter += 1
-                                                output_dict[key][
-                                                    secondary_key_index_counter
-                                                ][tertiary_key][
-                                                    quaternary_key_index_counter
-                                                ][
-                                                    quinary_key
-                                                ][
+                                                output_dict[key][secondary_key_index_counter][
+                                                    tertiary_key
+                                                ][quaternary_key_index_counter][quinary_key][
                                                     senary_key
                                                 ] = gui.get_index_value(
                                                     f"{senary_key}_{universal_counter}",
-                                                    output_dict[key][
-                                                        secondary_key_index_counter
-                                                    ][tertiary_key][
-                                                        quaternary_key_index_counter
-                                                    ][
-                                                        quinary_key
-                                                    ][
+                                                    output_dict[key][secondary_key_index_counter][
+                                                        tertiary_key
+                                                    ][quaternary_key_index_counter][quinary_key][
                                                         senary_key
                                                     ],
                                                 )
                                         elif quinary_key in gui.entries:
                                             universal_counter += 1
-                                            output_dict[key][
-                                                secondary_key_index_counter
-                                            ][tertiary_key][
-                                                quaternary_key_index_counter
-                                            ][
+                                            output_dict[key][secondary_key_index_counter][
+                                                tertiary_key
+                                            ][quaternary_key_index_counter][
                                                 quinary_key
                                             ] = gui.get_index_value(
                                                 f"{quinary_key}_{universal_counter}",
-                                                output_dict[key][
-                                                    secondary_key_index_counter
-                                                ][tertiary_key][
-                                                    quaternary_key_index_counter
-                                                ][
-                                                    quinary_key
-                                                ],
+                                                output_dict[key][secondary_key_index_counter][
+                                                    tertiary_key
+                                                ][quaternary_key_index_counter][quinary_key],
                                             )
                                     quaternary_key_index_counter += 1
 
                                 elif quaternary_key in gui.entries:
                                     universal_counter += 1
                                     if (
-                                        output_dict[key][secondary_key_index_counter][
-                                            tertiary_key
-                                        ][quaternary_key]
+                                        output_dict[key][secondary_key_index_counter][tertiary_key][
+                                            quaternary_key
+                                        ]
                                         is None
                                     ):
-                                        output_dict[key][secondary_key_index_counter][
-                                            tertiary_key
-                                        ][quaternary_key] = gui.get_index_value(
+                                        output_dict[key][secondary_key_index_counter][tertiary_key][
+                                            quaternary_key
+                                        ] = gui.get_index_value(
                                             f"{quaternary_key}_{universal_counter}",
                                             "None",
                                         )
                                     else:
-                                        output_dict[key][secondary_key_index_counter][
-                                            tertiary_key
-                                        ][quaternary_key] = gui.get_index_value(
+                                        output_dict[key][secondary_key_index_counter][tertiary_key][
+                                            quaternary_key
+                                        ] = gui.get_index_value(
                                             f"{quaternary_key}_{universal_counter}",
-                                            output_dict[key][
-                                                secondary_key_index_counter
-                                            ][tertiary_key][quaternary_key],
+                                            output_dict[key][secondary_key_index_counter][
+                                                tertiary_key
+                                            ][quaternary_key],
                                         )
                         elif tertiary_key in gui.entries:
                             universal_counter += 1
-                            output_dict[key][secondary_key_index_counter][
-                                tertiary_key
-                            ] = gui.get_index_value(
-                                f"{tertiary_key}_{universal_counter}",
-                                output_dict[key][secondary_key_index_counter][
-                                    tertiary_key
-                                ],
+                            output_dict[key][secondary_key_index_counter][tertiary_key] = (
+                                gui.get_index_value(
+                                    f"{tertiary_key}_{universal_counter}",
+                                    output_dict[key][secondary_key_index_counter][tertiary_key],
+                                )
                             )
                     secondary_key_index_counter += 1
 
@@ -620,18 +604,12 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                             if secondary_key in gui.entries:
                                 universal_counter += 1
                                 output_dict[key][secondary_key] = [
-                                    int(
-                                        gui.get_index_value(
-                                            f"{secondary_key}_{universal_counter}"
-                                        )
-                                    )
+                                    int(gui.get_index_value(f"{secondary_key}_{universal_counter}"))
                                 ]
                         elif isinstance(
                             output_dict[key][secondary_key][tertiary_key], (dict, list)
                         ):
-                            for quaternary_key in output_dict[key][secondary_key][
-                                tertiary_key
-                            ]:
+                            for quaternary_key in output_dict[key][secondary_key][tertiary_key]:
                                 if isinstance(quaternary_key, dict):
                                     for quinary_key in quaternary_key:
                                         universal_counter += 1
@@ -639,11 +617,9 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                                             quaternary_key_index_counter
                                         ][quinary_key] = gui.get_index_value(
                                             f"{quinary_key}_{universal_counter}",
-                                            output_dict[key][secondary_key][
-                                                tertiary_key
-                                            ][quaternary_key_index_counter][
-                                                quinary_key
-                                            ],
+                                            output_dict[key][secondary_key][tertiary_key][
+                                                quaternary_key_index_counter
+                                            ][quinary_key],
                                         )
                                     quaternary_key_index_counter += 1
                                 elif quaternary_key in gui.entries:
@@ -659,11 +635,9 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
                                 quaternary_key_index_counter = 0
                         elif tertiary_key in gui.entries:
                             universal_counter += 1
-                            output_dict[key][secondary_key][tertiary_key] = (
-                                gui.get_index_value(
-                                    f"{tertiary_key}_{universal_counter}",
-                                    output_dict[key][secondary_key][tertiary_key],
-                                )
+                            output_dict[key][secondary_key][tertiary_key] = gui.get_index_value(
+                                f"{tertiary_key}_{universal_counter}",
+                                output_dict[key][secondary_key][tertiary_key],
                             )
 
                 elif secondary_key in gui.entries:
@@ -683,9 +657,7 @@ def generate_output_json(gui: ElectrodeGUI, output_dict: dict) -> None:
         elif key in gui.entries:
             if output_dict[key] is None:
                 universal_counter += 1
-                output_dict[key] = gui.get_index_value(
-                    f"{key}_{universal_counter}", "None"
-                )
+                output_dict[key] = gui.get_index_value(f"{key}_{universal_counter}", "None")
             else:
                 universal_counter += 1
                 output_dict[key] = gui.get_index_value(
@@ -740,10 +712,10 @@ def run_oss_dbs(file_path: str) -> None:
     """
     print("Generating OSS-DBS output...")
     try:
-        result = subprocess.run(["ossdbs", file_path], check=True)
+        subprocess.run(["ossdbs", file_path], check=True)
         print("OSS-DBS Output Complete")
-    except subprocess.CalledProcessError as e:
-        print("Error running oss-dbs:", e)
+    except subprocess.CalledProcessError as err:
+        print("Error running oss-dbs:", err)
 
 
 if __name__ == "__main__":

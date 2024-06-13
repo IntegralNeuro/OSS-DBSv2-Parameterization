@@ -95,6 +95,12 @@ default_electrode_parameters = {
         contact_spacing=2.0,
         lead_diameter=1.3,
         total_length=450.0,
+        segment_contact_angle=100.0,
+        n_segments_per_level=3,
+        levels=3,
+        segmented_levels=[1, 3],
+        tip_contact=False,
+        _n_contacts=7
     ),        
     "Medtronic3387": MedtronicParameters(
         tip_length=1.5,

@@ -25,12 +25,12 @@ class BestElectrodeEverParameters:
     total_length: float
 
     # customization parameters
-    segment_contact_angle = 100.0  # grad
-    n_segments_per_level = 3
-    levels = 3
-    segmented_levels = [1,3]  # from 1 to levels
-    tip_contact = False
-    _n_contacts = 7
+    segment_contact_angle: float  # grad
+    n_segments_per_level: int
+    levels: int
+    segmented_levels: list[int]  # from 1 to levels
+    tip_contact: bool
+    _n_contacts: int
     #_n_contacts = n_segments_per_level * len(segmented_levels) + (levels - len(segmented_levels))
 
     def get_center_first_contact(self) -> float:
@@ -63,7 +63,7 @@ class BestElectrodeEverModel(ElectrodeModel):
     """
 
     # customization parameters
-    _n_contacts = 7
+    # _n_contacts = 7
 
     #_n_contacts = n_segments_per_level * len(segmented_levels) + (levels - len(segmented_levels))
 
@@ -121,7 +121,6 @@ class BestElectrodeEverModel(ElectrodeModel):
 
         # compute total number of contacts
         #self._n_contacts = self._parameters.n_segments_per_level * self._parameters.segmented_levels + (self._parameters.levels - self._parameters.segmented_levels)
-
         if 1 in self._parameters.segmented_levels and self._parameters.tip_contact:
             print("Tip contact cannot be segmented!")
             raise SystemExit
@@ -209,11 +208,11 @@ class BestElectrodeEverModel(ElectrodeModel):
             print(name)
             contact.bc(name)
             # Label max z value and min z value for contact_14
-            if index == self._n_contacts or (self._parameters.tip_contact and index == 1):
+            if index == self._parameters._n_contacts or (self._parameters.tip_contact and index == 1):
                 min_edge = get_lowest_edge(contact)
                 min_edge.name = name
             # Only label contact edge with maximum z value for contact_1
-            if index == 1 or index == self._n_contacts:
+            if index == 1 or index == self._parameters._n_contacts:
                 max_edge = get_highest_edge(contact)
                 max_edge.name = name
             else:

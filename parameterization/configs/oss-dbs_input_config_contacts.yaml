@@ -1,4 +1,0 @@
-oss_dbs_input_json:
-  Electrodes:
-    - CustomParameters:
-        material: titanium
