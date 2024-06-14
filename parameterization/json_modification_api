@@ -25,6 +25,31 @@ class CustomElectrodeModeler:
         self.custom_contacts = []
         self.output_path = ""
         self.file_path = ""
+        self.filenames = [
+            "electrode_1.vtu",
+            "conductivity.vtu",
+            "E-field.vtu",
+            "material.vtu",
+            "potential.vtu",
+        ]
+        self.scalars = [
+            "boundaries",
+            "conductivity_real",
+            "E_field_real",
+            "material_real",
+            "potential_real",
+        ]
+        self.colormaps = [
+            "viridis",  # Colormap for 'boundaries'
+            "plasma",  # Colormap for 'conductivity_real'
+            "inferno",  # Colormap for 'E_field_real'
+            "magma",  # Colormap for 'material_real'
+            "cividis",  # Colormap for 'potential_real'
+        ]
+        self.meshes = []
+        self.scalar_array_actor = {}
+        self.plotter = pv.Plotter()
+        self.plotter.set_background("skyblue")
         self.config_name = config_input
         self.input_dict = self.generate_input_dictionary_template()
         self.initial_contacts = self.input_dict["Electrodes"][0]["Contacts"]
@@ -42,17 +67,7 @@ class CustomElectrodeModeler:
         """
         self.input_dict["Electrodes"][0]["Contacts"] = self.custom_contacts
         n_contacts_existing = len(self.input_dict["Electrodes"][0]["Contacts"])
-        # self.modify_electrode_custom_parameters(n_contacts=n_contacts_existing)
-        # mutable_contact_template = _CONTACT_DICT_TEMPLATE.copy()
-        # if contact_diff > 0:
-        #     for i in range(contact_diff):
-        #         mutable_contact_template["Contact_ID"] = n_contacts_existing + i + 1
-        #         self.input_dict["Electrodes"][0]["Contacts"].append(mutable_contact_template)
-        #         print(mutable_contact_template)
-        #         print(self.input_dict["Electrodes"][0]["Contacts"])
-        # elif contact_diff < 0:
-        #     for i in range(abs(contact_diff)):
-        #         self.input_dict["Electrodes"][0]["Contacts"].pop()
+        self.modify_electrode_custom_parameters(_n_contacts=n_contacts_existing)
 
     def generate_input_dictionary_template(self) -> dict:
         """
@@ -75,10 +90,10 @@ class CustomElectrodeModeler:
         """
         now = datetime.now().strftime("%Y%m%d_%H%M%S")
         if custom_outputpath:
-            self.input_dict["OutputPath"] = f"{custom_outputpath}_{now}"
+            self.input_dict["OutputPath"] = f"results/{custom_outputpath}_{now}"
         else:
-            self.input_dict["OutputPath"] = f"{self.input_dict['OutputPath']}_{now}"
-        self.output_path = self.input_dict["OutputPath"]
+            self.input_dict["OutputPath"] = f"results/{self.input_dict['OutputPath']}_{now}"
+        self.output_path = self.input_dict['OutputPath']
         os.makedirs(self.output_path, exist_ok=True)
 
     def modify_electrode_custom_parameters(
@@ -112,6 +127,15 @@ class CustomElectrodeModeler:
             ]:
                 if locals().get(key):
                     custom_params[key] = locals()[key]
+
+    def get_electrode_custom_parameters(self) -> dict:
+        """
+        Returns the custom parameters of the electrode.
+
+        Returns:
+            dict: The custom parameters of the electrode.
+        """
+        return self.input_dict["Electrodes"][0]["CustomParameters"]
 
     def generate_floating_contact(
         self,
@@ -205,6 +229,63 @@ class CustomElectrodeModeler:
             print("OSS-DBS Output Complete")
         except subprocess.CalledProcessError as err:
             print("Error running oss-dbs:", err)
+            
+    def plot_electrode(self) -> None:
+        for i, filename in enumerate(self.filenames):
+            if filename == "electrode_1.vtu":
+                electrode = pv.read(f"{self.output_path}/{filename}")
+                self.scalar_array_actor[i] = electrode[self.scalars[i]]
+                mesh_actor = self.plotter.add_mesh(
+                    electrode,
+                    show_edges=False,
+                    name=filename,
+                    scalars=self.scalar_array_actor[i],
+                    scalar_bar_args={
+                        "title": self.scalars[i],
+                        "title_font_size": 15,
+                        "label_font_size": 10,
+                        "width": 0.15,
+                        "height": 0.025,
+                        "position_x": 0.8,
+                        "position_y": 0.05 * i,
+                    },
+                    cmap=self.colormaps[i],
+                )
+            else:
+                mesh = pv.read(f"{self.output_path}/{filename}")
+                self.scalar_array_actor[i] = mesh[self.scalars[i]]
+                mesh_actor = self.plotter.add_mesh(
+                    mesh,
+                    style="points",
+                    show_edges=False,
+                    name=filename,
+                    scalars=self.scalar_array_actor[i],
+                    scalar_bar_args={
+                        "title": self.scalars[i],
+                        "title_font_size": 15,
+                        "label_font_size": 10,
+                        "width": 0.15,
+                        "height": 0.025,
+                        "position_x": 0.8,
+                        "position_y": 0.05 * i,
+                    },
+                    cmap=self.colormaps[i],
+                )
+                mesh_actor.SetVisibility(False)
+            self.meshes.append(mesh_actor)
+            self.plotter.add_checkbox_button_widget(
+                lambda flag, idx=i: self.toggle_visibility(flag, idx),
+                position=(10, 10 + i * 30),  # Adjust position for each checkbox
+                color_on=(0.0, 1.0, 0.0),  # Optional: color when checked (green)
+                color_off=(1.0, 0.0, 0.0),  # Optional: color when unchecked (red)
+                size=20,  # Optional: size of the checkbox
+            )
+            self.plotter.add_text(filename, position=(40, 10 + i * 30), font_size=10)
+        self.plotter.show()
+
+    def toggle_visibility(self, flag, index):
+        self.meshes[index].SetVisibility(flag)
+        self.plotter.render()
 
 
 def main() -> None:
@@ -212,41 +293,40 @@ def main() -> None:
     This is the main function of the program.
     It creates an instance of CustomElectrodeModeler and performs the necessary operations.
     """
-    modeler = CustomElectrodeModeler("ossdbs_input_config")
-    model_electrode(modeler)
-    plot_electrode(modeler)
+    model_electrode()
 
 
-def model_electrode(modeler: CustomElectrodeModeler):
+def model_electrode():
     """
     This function models the electrode with the specified number of contacts.
 
     Args:
         modeler (CustomElectrodeModeler): The CustomElectrodeModeler instance.
-        n_contacts (int): The number of contacts to model.
 
     Returns:
         None
     """
-    modeler.modify_electrode_custom_parameters(
+    electrode = CustomElectrodeModeler("ossdbs_input_config")
+    electrode.modify_electrode_custom_parameters(
         total_length=300.0,
         segment_contact_angle=80,
-        n_segments_per_level=2,
+        n_segments_per_level=3,
         levels=4,
         segmented_levels=[2, 3, 4],
         tip_contact=True,
-        _n_contacts=7,
+        _n_contacts=10,
     )
-    for i in range(len(modeler.initial_contacts)):
-        modeler.generate_current_contact(i + 1, 0.1 * i)
-    modeler.update_parameters()
-    modeler.modify_json_parameters()
-    modeler.run_ossdbs()
+    for i in range(electrode.get_electrode_custom_parameters()["_n_contacts"]):
+        electrode.generate_current_contact(i + 1, 0.1 * i)
+    electrode.update_parameters()
+    electrode.modify_json_parameters()
+    electrode.run_ossdbs()
+    electrode.plot_electrode()
 
 
-def plot_electrode(modeler: CustomElectrodeModeler) -> None:
+def model_electrode():
     """
-    This function plots the electrode using PyVista.
+    This function models the electrode with the specified number of contacts.
 
     Args:
         modeler (CustomElectrodeModeler): The CustomElectrodeModeler instance.
@@ -254,78 +334,22 @@ def plot_electrode(modeler: CustomElectrodeModeler) -> None:
     Returns:
         None
     """
-    filenames = [
-        "electrode_1.vtu",
-        "conductivity.vtu",
-        "E-field.vtu",
-        "material.vtu",
-        "potential.vtu",
-    ]
-    scalars = [
-        "boundaries",
-        "conductivity_real",
-        "E_field_real",
-        "material_real",
-        "potential_real",
-    ]
-    plotter = pv.Plotter()
-    meshes = []
-    scalar_array_actor = {}
-
-    for i, filename in enumerate(filenames):
-        if filename == "electrode_1.vtu":
-            electrode = pv.read(f"{modeler.output_path}/{filename}")
-            scalar_array_actor[i] = electrode[scalars[i]]
-            mesh_actor = plotter.add_mesh(
-                electrode,
-                show_edges=False,
-                name=filename,
-                scalars=scalar_array_actor[i],
-                scalar_bar_args={
-                    "title": scalars[i],
-                    "title_font_size": 15,
-                    "label_font_size": 10,
-                    "width": 0.15,
-                    "height": 0.025,
-                    "position_x": 0.8,
-                    "position_y": 0.05 * i,
-                },
-            )
-        else:
-            mesh = pv.read(f"{modeler.output_path}/{filename}")
-            scalar_array_actor[i] = mesh[scalars[i]]
-            mesh_actor = plotter.add_mesh(
-                mesh,
-                style="points",
-                show_edges=False,
-                name=filename,
-                scalars=scalar_array_actor[i],
-                scalar_bar_args={
-                    "title": scalars[i],
-                    "title_font_size": 15,
-                    "label_font_size": 10,
-                    "width": 0.15,
-                    "height": 0.025,
-                    "position_x": 0.8,
-                    "position_y": 0.05 * i,
-                },
-            )
-        meshes.append(mesh_actor)
-        plotter.add_checkbox_button_widget(
-            lambda flag, idx=i: toggle_visibility(flag, idx, plotter, meshes),
-            position=(10, 10 + i * 30),  # Adjust position for each checkbox
-            color_on=(0.0, 1.0, 0.0),  # Optional: color when checked (green)
-            color_off=(1.0, 0.0, 0.0),  # Optional: color when unchecked (red)
-            size=20,  # Optional: size of the checkbox
-        )
-        plotter.add_text(filename, position=(40, 10 + i * 30), font_size=10)
-
-    plotter.show()
-
-
-def toggle_visibility(flag, index, plotter, meshes):
-    meshes[index].SetVisibility(flag)
-    plotter.render()
+    electrode = CustomElectrodeModeler("ossdbs_input_config")
+    electrode.modify_electrode_custom_parameters(
+        total_length=300.0,
+        segment_contact_angle=80,
+        n_segments_per_level=3,
+        levels=4,
+        segmented_levels=[2, 3, 4],
+        tip_contact=True,
+        _n_contacts=10,
+    )
+    for i in range(electrode.get_electrode_custom_parameters()["_n_contacts"]):
+        electrode.generate_current_contact(i + 1, 0.1 * i)
+    electrode.update_parameters()
+    electrode.modify_json_parameters()
+    electrode.run_ossdbs()
+    electrode.plot_electrode()
 
 
 if __name__ == "__main__":
