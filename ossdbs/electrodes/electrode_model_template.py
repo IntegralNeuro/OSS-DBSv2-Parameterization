@@ -49,8 +49,7 @@ class ElectrodeModel(ABC):
         self._rotation = rotation
         norm = np.linalg.norm(direction)
         self._direction = tuple(direction / norm) if norm else (0, 0, 1)
-
-        print(parameters)
+        
         self._n_contacts = parameters._n_contacts
 
         self._boundaries = {"Body": "Body"}

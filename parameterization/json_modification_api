@@ -1,0 +1,332 @@
+import argparse
+import json
+import os
+import pyvista as pv
+import subprocess
+from datetime import datetime
+
+from hydra import compose, initialize  # type: ignore
+from omegaconf import OmegaConf  # type: ignore
+
+_CONTACT_DICT_TEMPLATE = {
+    "Contact_ID": 0,
+    "Active": False,
+    "Current[A]": 0.0,
+    "Voltage[V]": False,
+    "Floating": True,
+    "SurfaceImpedance[Ohmm]": {"real": 0.0, "imag": 0.0},
+    "MaxMeshSize": 1.0,
+    "MaxMeshSizeEdge": 0.035,
+}
+
+
+class CustomElectrodeModeler:
+    def __init__(self, config_input: str = "ossdbs_input_config") -> None:
+        self.custom_contacts = []
+        self.output_path = ""
+        self.file_path = ""
+        self.config_name = config_input
+        self.input_dict = self.generate_input_dictionary_template()
+        self.initial_contacts = self.input_dict["Electrodes"][0]["Contacts"]
+        self.generate_output_path()
+
+    def update_parameters(self) -> dict:
+        """
+        Updates parameters from the input dictionary based on the number of contacts specified.
+
+        Args:
+            contact_dict (dict): The input dictionary.
+
+        Returns:
+            None
+        """
+        self.input_dict["Electrodes"][0]["Contacts"] = self.custom_contacts
+        n_contacts_existing = len(self.input_dict["Electrodes"][0]["Contacts"])
+        # self.modify_electrode_custom_parameters(n_contacts=n_contacts_existing)
+        # mutable_contact_template = _CONTACT_DICT_TEMPLATE.copy()
+        # if contact_diff > 0:
+        #     for i in range(contact_diff):
+        #         mutable_contact_template["Contact_ID"] = n_contacts_existing + i + 1
+        #         self.input_dict["Electrodes"][0]["Contacts"].append(mutable_contact_template)
+        #         print(mutable_contact_template)
+        #         print(self.input_dict["Electrodes"][0]["Contacts"])
+        # elif contact_diff < 0:
+        #     for i in range(abs(contact_diff)):
+        #         self.input_dict["Electrodes"][0]["Contacts"].pop()
+
+    def generate_input_dictionary_template(self) -> dict:
+        """
+        Generates a template for the input dictionary.
+
+        Returns:
+            dict: The generated input dictionary template.
+        """
+        with initialize(config_path="configs"):
+            cfg = compose(config_name=self.config_name)
+        data = OmegaConf.to_container(cfg.ossdbs_input_json, resolve=True)
+        return data
+
+    def generate_output_path(self, custom_outputpath=None) -> None:
+        """
+        Generates the output path for the JSON file.
+
+        Returns:
+            None
+        """
+        now = datetime.now().strftime("%Y%m%d_%H%M%S")
+        if custom_outputpath:
+            self.input_dict["OutputPath"] = f"{custom_outputpath}_{now}"
+        else:
+            self.input_dict["OutputPath"] = f"{self.input_dict['OutputPath']}_{now}"
+        self.output_path = self.input_dict["OutputPath"]
+        os.makedirs(self.output_path, exist_ok=True)
+
+    def modify_electrode_custom_parameters(
+        self,
+        tip_length=None,
+        contact_length=None,
+        contact_spacing=None,
+        lead_diameter=None,
+        total_length=None,
+        segment_contact_angle=None,
+        n_segments_per_level=None,
+        levels=None,
+        segmented_levels=None,
+        tip_contact=None,
+        _n_contacts=None,
+    ) -> None:
+        custom_params = self.input_dict["Electrodes"][0]["CustomParameters"]
+        for key in custom_params.keys():
+            if key in [
+                "tip_length",
+                "contact_length",
+                "contact_spacing",
+                "lead_diameter",
+                "total_length",
+                "segment_contact_angle",
+                "n_segments_per_level",
+                "levels",
+                "segmented_levels",
+                "tip_contact",
+                "_n_contacts",
+            ]:
+                if locals().get(key):
+                    custom_params[key] = locals()[key]
+
+    def generate_floating_contact(
+        self,
+        contact_id,
+        impedance_real=0.0,
+        impedance_imag=0.0,
+        max_mesh_size=1.0,
+        max_mesh_size_edge=0.035,
+    ) -> None:
+        floating_contact = _CONTACT_DICT_TEMPLATE.copy()
+        floating_contact["Contact_ID"] = contact_id
+        floating_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
+        floating_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
+        floating_contact["MaxMeshSize"] = max_mesh_size
+        floating_contact["MaxMeshSizeEdge"] = max_mesh_size_edge
+        self.custom_contacts.append(floating_contact)
+        return floating_contact
+
+    def generate_current_contact(
+        self,
+        contact_id,
+        current_a,
+        impedance_real=0.0,
+        impedance_imag=0.0,
+        max_mesh_size=1.0,
+        max_mesh_size_edge=0.035,
+    ) -> None:
+        current_contact = _CONTACT_DICT_TEMPLATE.copy()
+        current_contact["Contact_ID"] = contact_id
+        current_contact["Active"] = True
+        current_contact["Current[A]"] = current_a
+        current_contact["Floating"] = False
+        current_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
+        current_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
+        current_contact["MaxMeshSize"] = max_mesh_size
+        current_contact["MaxMeshSizeEdge"] = max_mesh_size_edge
+        self.custom_contacts.append(current_contact)
+        return current_contact
+
+    def generate_voltage_contact(
+        self,
+        contact_id,
+        voltage_v,
+        impedance_real=0.0,
+        impedance_imag=0.0,
+        max_mesh_size=1.0,
+        max_mesh_size_edge=0.035,
+    ) -> None:
+        voltage_contact = _CONTACT_DICT_TEMPLATE.copy()
+        voltage_contact["Contact_ID"] = contact_id
+        voltage_contact["Active"] = True
+        voltage_contact["Current[A]"] = False
+        voltage_contact["Voltage[V]"] = voltage_v
+        voltage_contact["Floating"] = False
+        voltage_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
+        voltage_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
+        voltage_contact["MaxMeshSize"] = max_mesh_size
+        voltage_contact["MaxMeshSizeEdge"] = max_mesh_size_edge
+        self.custom_contacts.append(voltage_contact)
+        return voltage_contact
+
+    def modify_json_parameters(self) -> None:
+        """
+        Modifies the input dictionary and writes it to a JSON file.
+
+        Args:
+            results_path (str): The path where the JSON file will be saved.
+
+        Returns:
+            None
+        """
+        self.file_path = f"{self.output_path}/generated_ossdbs_parameters.json"
+        with open(self.file_path, "w") as file:
+            json.dump(self.input_dict, file, indent=2)
+
+        print(f"JSON template data has been written to {self.file_path}")
+
+    def run_ossdbs(self) -> None:
+        """
+        Runs the OSS-DBS command line tool with the specified file path.
+
+        Args:
+            file_path (str): The path to the input file.
+
+        Returns:
+            None
+        """
+        print("Generating OSS-DBS output...")
+        try:
+            subprocess.run(["ossdbs", self.file_path], check=True)
+            print("OSS-DBS Output Complete")
+        except subprocess.CalledProcessError as err:
+            print("Error running oss-dbs:", err)
+
+
+def main() -> None:
+    """
+    This is the main function of the program.
+    It creates an instance of CustomElectrodeModeler and performs the necessary operations.
+    """
+    modeler = CustomElectrodeModeler("ossdbs_input_config")
+    model_electrode(modeler)
+    plot_electrode(modeler)
+
+
+def model_electrode(modeler: CustomElectrodeModeler):
+    """
+    This function models the electrode with the specified number of contacts.
+
+    Args:
+        modeler (CustomElectrodeModeler): The CustomElectrodeModeler instance.
+        n_contacts (int): The number of contacts to model.
+
+    Returns:
+        None
+    """
+    modeler.modify_electrode_custom_parameters(
+        total_length=300.0,
+        segment_contact_angle=80,
+        n_segments_per_level=2,
+        levels=4,
+        segmented_levels=[2, 3, 4],
+        tip_contact=True,
+        _n_contacts=7,
+    )
+    for i in range(len(modeler.initial_contacts)):
+        modeler.generate_current_contact(i + 1, 0.1 * i)
+    modeler.update_parameters()
+    modeler.modify_json_parameters()
+    modeler.run_ossdbs()
+
+
+def plot_electrode(modeler: CustomElectrodeModeler) -> None:
+    """
+    This function plots the electrode using PyVista.
+
+    Args:
+        modeler (CustomElectrodeModeler): The CustomElectrodeModeler instance.
+
+    Returns:
+        None
+    """
+    filenames = [
+        "electrode_1.vtu",
+        "conductivity.vtu",
+        "E-field.vtu",
+        "material.vtu",
+        "potential.vtu",
+    ]
+    scalars = [
+        "boundaries",
+        "conductivity_real",
+        "E_field_real",
+        "material_real",
+        "potential_real",
+    ]
+    plotter = pv.Plotter()
+    meshes = []
+    scalar_array_actor = {}
+
+    for i, filename in enumerate(filenames):
+        if filename == "electrode_1.vtu":
+            electrode = pv.read(f"{modeler.output_path}/{filename}")
+            scalar_array_actor[i] = electrode[scalars[i]]
+            mesh_actor = plotter.add_mesh(
+                electrode,
+                show_edges=False,
+                name=filename,
+                scalars=scalar_array_actor[i],
+                scalar_bar_args={
+                    "title": scalars[i],
+                    "title_font_size": 15,
+                    "label_font_size": 10,
+                    "width": 0.15,
+                    "height": 0.025,
+                    "position_x": 0.8,
+                    "position_y": 0.05 * i,
+                },
+            )
+        else:
+            mesh = pv.read(f"{modeler.output_path}/{filename}")
+            scalar_array_actor[i] = mesh[scalars[i]]
+            mesh_actor = plotter.add_mesh(
+                mesh,
+                style="points",
+                show_edges=False,
+                name=filename,
+                scalars=scalar_array_actor[i],
+                scalar_bar_args={
+                    "title": scalars[i],
+                    "title_font_size": 15,
+                    "label_font_size": 10,
+                    "width": 0.15,
+                    "height": 0.025,
+                    "position_x": 0.8,
+                    "position_y": 0.05 * i,
+                },
+            )
+        meshes.append(mesh_actor)
+        plotter.add_checkbox_button_widget(
+            lambda flag, idx=i: toggle_visibility(flag, idx, plotter, meshes),
+            position=(10, 10 + i * 30),  # Adjust position for each checkbox
+            color_on=(0.0, 1.0, 0.0),  # Optional: color when checked (green)
+            color_off=(1.0, 0.0, 0.0),  # Optional: color when unchecked (red)
+            size=20,  # Optional: size of the checkbox
+        )
+        plotter.add_text(filename, position=(40, 10 + i * 30), font_size=10)
+
+    plotter.show()
+
+
+def toggle_visibility(flag, index, plotter, meshes):
+    meshes[index].SetVisibility(flag)
+    plotter.render()
+
+
+if __name__ == "__main__":
+    main()

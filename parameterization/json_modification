@@ -375,7 +375,7 @@ class ElectrodeGUI(tk.Tk):
             return integer_list
         if original_type == "None":
             return None
-        if name == "OutputPath_153":
+        if "OutputPath" in name:
             self.outputpath = (
                 f"{self.indexes[name].get()}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
             )
@@ -400,29 +400,9 @@ def main():
     It generates an input dictionary template and creates a GUI using the input dictionary.
     """
     # args = parse_args()
-    # print(
-    #     _PYTHON_FILE_TO_MODIFY_FILE_PATH,
-    #     args.segment_contact_angle,
-    #     args.n_segments_per_level,
-    #     args.levels,
-    #     args.segmented_levels,
-    #     args.tip_contact,
-    #     args._n_contacts,
-    # )
     input_dict = generate_input_dictionary_template()
-    # _n_contacts = input_dict["Electrodes"][0]["CustomParameters"]["_n_contacts"]
-    # template_contacts = len(input_dict["Electrodes"][0]["Contacts"])
-    # contact_diff = _n_contacts - template_contacts
-    # print(_n_contacts, template_contacts, contact_diff)
-    # if contact_diff > 0:
-    #     for i in range(contact_diff + 1):
-    #         _CONTACT_DICT_TEMPLATE["Contact_ID"] = template_contacts + contact_iterator
-    #         input_dict["Electrodes"][0]["Contacts"].append(_CONTACT_DICT_TEMPLATE)
-    # elif contact_diff < 0:
-    #     for i in range(abs(contact_diff)):
-    #         input_dict["Electrodes"][0]["Contacts"].pop()
-    # print(input_dict)
-    create_gui(input_dict)
+    input_dict_updated_with_contacts = add_or_remove_contacts(input_dict)
+    create_gui(input_dict_updated_with_contacts)
 
 
 def parse_args():
@@ -433,52 +413,33 @@ def parse_args():
         argparse.Namespace: Parsed command line arguments.
     """
     parser = argparse.ArgumentParser(description="Parameters for OSS-DBS JSON Generation")
-    parser.add_argument(
-        "-a",
-        "--segment_contact_angle",
-        type=float,
-        help="Segment contact angle",
-        required=False,
-        default=100.0,
-    )
-    parser.add_argument(
-        "-spl",
-        "--n_segments_per_level",
-        type=int,
-        help="Number of segments per level",
-        required=False,
-        default=3,
-    )
-    parser.add_argument(
-        "-l", "--levels", type=int, help="Number of levels", required=False, default=3
-    )
-    parser.add_argument(
-        "-sl",
-        "--segmented_levels",
-        type=int,
-        nargs="+",
-        help="Segmented levels",
-        required=False,
-        default=[1, 3],
-    )
-    parser.add_argument(
-        "-c",
-        "--tip_contact",
-        type=bool,
-        help="Tip contact",
-        required=False,
-        default=False,
-    )
-    parser.add_argument(
-        "-n",
-        "--_n_contacts",
-        type=int,
-        help="Number of contacts",
-        required=False,
-        default=7,
-    )
-
     return parser.parse_args()
+
+
+def add_or_remove_contacts(input_dict: dict) -> dict:
+    """
+    Adds or removes contacts from the input dictionary based on the number of contacts specified.
+
+    Args:
+        input_dict (dict): The input dictionary to modify.
+        n_contacts (int): The number of contacts to add or remove.
+
+    Returns:
+        output_dict: The modified input dictionary.
+    """
+    n_contacts = input_dict["Electrodes"][0]["CustomParameters"]["_n_contacts"]
+    template_contacts = len(input_dict["Electrodes"][0]["Contacts"])
+    contact_diff = n_contacts - template_contacts
+    if contact_diff > 0:
+        for i in range(contact_diff):
+            _CONTACT_DICT_CURRENT_TEMPLATE["Contact_ID"] = template_contacts + i + 1
+            print(_CONTACT_DICT_CURRENT_TEMPLATE["Contact_ID"])
+            input_dict["Electrodes"][0]["Contacts"].append(_CONTACT_DICT_CURRENT_TEMPLATE)
+            print(input_dict["Electrodes"][0]["Contacts"])
+    elif contact_diff < 0:
+        for i in range(abs(contact_diff)):
+            input_dict["Electrodes"][0]["Contacts"].pop()
+    return input_dict
 
 
 def create_gui(input_dict: dict) -> None:
@@ -675,8 +636,8 @@ def generate_input_dictionary_template() -> dict:
         dict: The generated input dictionary template.
     """
     with initialize(config_path="configs"):
-        cfg = compose(config_name="oss-dbs_input_config")
-    data = OmegaConf.to_container(cfg.oss_dbs_input_json, resolve=True)
+        cfg = compose(config_name="ossdbs_input_config")
+    data = OmegaConf.to_container(cfg.ossdbs_input_json, resolve=True)
     return data
 
 
@@ -697,10 +658,10 @@ def modify_json_parameters(input_dict: dict, results_path: str) -> None:
 
     print(f"JSON template data has been written to {file_path}")
 
-    run_oss_dbs(file_path)
+    run_ossdbs(file_path)
 
 
-def run_oss_dbs(file_path: str) -> None:
+def run_ossdbs(file_path: str) -> None:
     """
     Runs the OSS-DBS command line tool with the specified file path.
 
