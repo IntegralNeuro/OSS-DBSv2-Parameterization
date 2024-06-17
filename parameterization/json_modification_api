@@ -54,7 +54,6 @@ class CustomElectrodeModeler:
         self.config_name = config_input
         self.input_dict = self.generate_input_dictionary_template()
         self.initial_contacts = self.input_dict["Electrodes"][0]["Contacts"]
-        self.generate_output_path()
 
     def update_parameters(self) -> dict:
         """
@@ -76,6 +75,7 @@ class CustomElectrodeModeler:
                     total_current_a += i["Current[A]"]
         total_current_a = -total_current_a
         self.modify_surface_parameters(name="BrainSurface", current_a=total_current_a)
+        self.custom_contacts = []
 
     def generate_input_dictionary_template(self) -> dict:
         """
@@ -135,6 +135,10 @@ class CustomElectrodeModeler:
             ]:
                 if locals().get(key):
                     custom_params[key] = locals()[key]
+        if custom_params["tip_contact"] is True:
+            custom_params["_n_contacts"] = custom_params["n_segments_per_level"]*(custom_params["levels"]-1)+int(custom_params["tip_contact"])
+        else:
+            custom_params["_n_contacts"] = custom_params["n_segments_per_level"]*custom_params["levels"]
 
     def modify_surface_parameters(self, name="BrainSurface", active=None, current_a=None, voltage_v=None):
         custom_surfaces = self.input_dict["Surfaces"]
@@ -247,7 +251,10 @@ class CustomElectrodeModeler:
         except subprocess.CalledProcessError as err:
             print("Error running oss-dbs:", err)
             
-    def plot_electrode(self) -> None:
+    def plot_electrode(self, output_path=None) -> None:
+        if output_path:
+            self.output_path = output_path
+        title = f"OSS-DBS Electrode Model: {self.output_path}"
         for i, filename in enumerate(self.filenames):
             if filename == "electrode_1.vtu":
                 electrode = pv.read(f"{self.output_path}/{filename}")
@@ -299,7 +306,9 @@ class CustomElectrodeModeler:
                 size=20,  # Optional: size of the checkbox
             )
             self.plotter.add_text(filename, position=(40, 10 + i * 30), font_size=10)
-        self.plotter.title = f"OSS-DBS Electrode Model: {self.file_path}, _n_contacts: {len(self.input_dict['Electrodes'][0]['Contacts'])}"
+        self.plotter.title = title
+        self.plotter.add_text(title, position='upper_left', color='white', font_size=16)
+        self.plotter.show_grid()
         self.plotter.show()
 
     def toggle_visibility(self, flag, index):
@@ -326,26 +335,27 @@ def model_electrode():
         None
     """
     electrode = CustomElectrodeModeler("ossdbs_input_config")
-    electrode.modify_electrode_custom_parameters(
-        total_length=300.0,
-        segment_contact_angle=80,
-        n_segments_per_level=3,
-        levels=4,
-        segmented_levels=[2, 3, 4],
-        tip_contact=True,
-        _n_contacts=10,
-    )
-    for i in range(electrode.get_electrode_custom_parameters()["_n_contacts"]):
-        if i % 2 == 0:
-            electrode.generate_floating_contact(i + 1)
-        else:
-            electrode.generate_current_contact(i + 1, 1)
-    electrode.update_parameters()
-    electrode.modify_json_parameters()
-    electrode.run_ossdbs()
-    electrode.plot_electrode()
+    electrodes_to_generate = 5
+    for i in range(electrodes_to_generate):
+        electrode.modify_electrode_custom_parameters(
+            total_length=300.0,
+            segment_contact_angle=360/(i+2)-(20),
+            n_segments_per_level=i+2,
+            levels=4,
+            segmented_levels=[2, 3, 4],
+            tip_contact=True,
+        )
+        for j in range(electrode.get_electrode_custom_parameters()["_n_contacts"]):
+            if j % 2 == 0:
+                electrode.generate_floating_contact(j + 1)
+            else:
+                electrode.generate_current_contact(j + 1, 1.0)
+        electrode.generate_output_path(f"electrode_{i+1}")
+        electrode.update_parameters()
+        electrode.modify_json_parameters()
+        electrode.run_ossdbs()
+    electrode.plot_electrode()  # Right now this only plots the last electrode generated
 
 
 if __name__ == "__main__":
-
     main()
