@@ -1,7 +1,8 @@
 import argparse
+import copy
 import json
 import os
-import pyvista as pv
+import pyvista as pv # type: ignore
 import subprocess
 from datetime import datetime
 
@@ -40,16 +41,16 @@ class CustomElectrodeModeler:
             "potential_real",
         ]
         self.colormaps = [
-            "viridis",  # Colormap for 'boundaries'
+            "cividis",  # Colormap for 'boundaries'
             "plasma",  # Colormap for 'conductivity_real'
-            "inferno",  # Colormap for 'E_field_real'
+            "Blues_r",  # Colormap for 'E_field_real'
             "magma",  # Colormap for 'material_real'
-            "cividis",  # Colormap for 'potential_real'
+            "YlOrRd",  # Colormap for 'potential_real'
         ]
         self.meshes = []
         self.scalar_array_actor = {}
         self.plotter = pv.Plotter()
-        self.plotter.set_background("skyblue")
+        self.plotter.set_background("slategray")
         self.config_name = config_input
         self.input_dict = self.generate_input_dictionary_template()
         self.initial_contacts = self.input_dict["Electrodes"][0]["Contacts"]
@@ -68,6 +69,13 @@ class CustomElectrodeModeler:
         self.input_dict["Electrodes"][0]["Contacts"] = self.custom_contacts
         n_contacts_existing = len(self.input_dict["Electrodes"][0]["Contacts"])
         self.modify_electrode_custom_parameters(_n_contacts=n_contacts_existing)
+        total_current_a = 0.0
+        for i in self.custom_contacts:
+            if i["Current[A]"] is not False:
+                if i["Current[A]"] != 0.0:
+                    total_current_a += i["Current[A]"]
+        total_current_a = -total_current_a
+        self.modify_surface_parameters(name="BrainSurface", current_a=total_current_a)
 
     def generate_input_dictionary_template(self) -> dict:
         """
@@ -128,6 +136,17 @@ class CustomElectrodeModeler:
                 if locals().get(key):
                     custom_params[key] = locals()[key]
 
+    def modify_surface_parameters(self, name="BrainSurface", active=None, current_a=None, voltage_v=None):
+        custom_surfaces = self.input_dict["Surfaces"]
+        for surface in custom_surfaces:
+            if surface["Name"] == name:
+                if active is not None:
+                    surface["Active"] = active
+                if current_a is not None:
+                    surface["Current[A]"] = current_a
+                if voltage_v is not None:
+                    surface["Voltage[V]"] = voltage_v
+
     def get_electrode_custom_parameters(self) -> dict:
         """
         Returns the custom parameters of the electrode.
@@ -145,7 +164,7 @@ class CustomElectrodeModeler:
         max_mesh_size=1.0,
         max_mesh_size_edge=0.035,
     ) -> None:
-        floating_contact = _CONTACT_DICT_TEMPLATE.copy()
+        floating_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
         floating_contact["Contact_ID"] = contact_id
         floating_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
         floating_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
@@ -163,11 +182,9 @@ class CustomElectrodeModeler:
         max_mesh_size=1.0,
         max_mesh_size_edge=0.035,
     ) -> None:
-        current_contact = _CONTACT_DICT_TEMPLATE.copy()
+        current_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
         current_contact["Contact_ID"] = contact_id
-        current_contact["Active"] = True
         current_contact["Current[A]"] = current_a
-        current_contact["Floating"] = False
         current_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
         current_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
         current_contact["MaxMeshSize"] = max_mesh_size
@@ -184,7 +201,7 @@ class CustomElectrodeModeler:
         max_mesh_size=1.0,
         max_mesh_size_edge=0.035,
     ) -> None:
-        voltage_contact = _CONTACT_DICT_TEMPLATE.copy()
+        voltage_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
         voltage_contact["Contact_ID"] = contact_id
         voltage_contact["Active"] = True
         voltage_contact["Current[A]"] = False
@@ -257,7 +274,7 @@ class CustomElectrodeModeler:
                 mesh_actor = self.plotter.add_mesh(
                     mesh,
                     style="points",
-                    show_edges=False,
+                    show_edges=True,
                     name=filename,
                     scalars=self.scalar_array_actor[i],
                     scalar_bar_args={
@@ -272,6 +289,7 @@ class CustomElectrodeModeler:
                     cmap=self.colormaps[i],
                 )
                 mesh_actor.SetVisibility(False)
+                print(f"{filename} MIN: {self.scalar_array_actor[i].min()}, MAX: {self.scalar_array_actor[i].max()}")
             self.meshes.append(mesh_actor)
             self.plotter.add_checkbox_button_widget(
                 lambda flag, idx=i: self.toggle_visibility(flag, idx),
@@ -281,6 +299,7 @@ class CustomElectrodeModeler:
                 size=20,  # Optional: size of the checkbox
             )
             self.plotter.add_text(filename, position=(40, 10 + i * 30), font_size=10)
+        self.plotter.title = f"OSS-DBS Electrode Model: {self.file_path}, _n_contacts: {len(self.input_dict['Electrodes'][0]['Contacts'])}"
         self.plotter.show()
 
     def toggle_visibility(self, flag, index):
@@ -317,35 +336,10 @@ def model_electrode():
         _n_contacts=10,
     )
     for i in range(electrode.get_electrode_custom_parameters()["_n_contacts"]):
-        electrode.generate_current_contact(i + 1, 0.1 * i)
-    electrode.update_parameters()
-    electrode.modify_json_parameters()
-    electrode.run_ossdbs()
-    electrode.plot_electrode()
-
-
-def model_electrode():
-    """
-    This function models the electrode with the specified number of contacts.
-
-    Args:
-        modeler (CustomElectrodeModeler): The CustomElectrodeModeler instance.
-
-    Returns:
-        None
-    """
-    electrode = CustomElectrodeModeler("ossdbs_input_config")
-    electrode.modify_electrode_custom_parameters(
-        total_length=300.0,
-        segment_contact_angle=80,
-        n_segments_per_level=3,
-        levels=4,
-        segmented_levels=[2, 3, 4],
-        tip_contact=True,
-        _n_contacts=10,
-    )
-    for i in range(electrode.get_electrode_custom_parameters()["_n_contacts"]):
-        electrode.generate_current_contact(i + 1, 0.1 * i)
+        if i % 2 == 0:
+            electrode.generate_floating_contact(i + 1)
+        else:
+            electrode.generate_current_contact(i + 1, 1)
     electrode.update_parameters()
     electrode.modify_json_parameters()
     electrode.run_ossdbs()
@@ -353,4 +347,5 @@ def model_electrode():
 
 
 if __name__ == "__main__":
+
     main()
