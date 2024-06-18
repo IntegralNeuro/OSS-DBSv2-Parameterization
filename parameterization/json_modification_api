@@ -9,12 +9,13 @@ from datetime import datetime
 from hydra import compose, initialize  # type: ignore
 from omegaconf import OmegaConf  # type: ignore
 
+# Default contacts are neither floating or active, and hence "unused"
 _CONTACT_DICT_TEMPLATE = {
     "Contact_ID": 0,
-    "Active": False,
-    "Current[A]": 0.0,
-    "Voltage[V]": False,
-    "Floating": True,
+    "Active": False,  # whether voltage is clamped in FEM
+    "Current[A]": False,  # whether the electrode is a current_source
+    "Voltage[V]": False,  # voltage - only matters if active==True (should be)
+    "Floating": False,  # required for used electrode if active==False
     "SurfaceImpedance[Ohmm]": {"real": 0.0, "imag": 0.0},
     "MaxMeshSize": 1.0,
     "MaxMeshSizeEdge": 0.035,
@@ -170,6 +171,30 @@ class CustomElectrodeModeler:
     ) -> None:
         floating_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
         floating_contact["Contact_ID"] = contact_id
+        floating_contact["Floating"] = True
+        floating_contact["Current[A]"] = 0.0
+        floating_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
+        floating_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
+        floating_contact["MaxMeshSize"] = max_mesh_size
+        floating_contact["MaxMeshSizeEdge"] = max_mesh_size_edge
+        self.custom_contacts.append(floating_contact)
+        return floating_contact
+
+    def generate_current_ground_contact(
+        self,
+        contact_id,
+        current_a,
+        impedance_real=0.0,
+        impedance_imag=0.0,
+        max_mesh_size=1.0,
+        max_mesh_size_edge=0.035,
+    ) -> None:
+        floating_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
+        floating_contact["Contact_ID"] = contact_id
+        floating_contact["Floating"] = True
+        floating_contact["Active"] = True
+        floating_contact["Current[A]"] = current_a
+        floating_contact["Voltage[V]"] = 0.0
         floating_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
         floating_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
         floating_contact["MaxMeshSize"] = max_mesh_size
@@ -188,6 +213,7 @@ class CustomElectrodeModeler:
     ) -> None:
         current_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
         current_contact["Contact_ID"] = contact_id
+        current_contact["Floating"] = True
         current_contact["Current[A]"] = current_a
         current_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
         current_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
@@ -208,9 +234,7 @@ class CustomElectrodeModeler:
         voltage_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
         voltage_contact["Contact_ID"] = contact_id
         voltage_contact["Active"] = True
-        voltage_contact["Current[A]"] = False
         voltage_contact["Voltage[V]"] = voltage_v
-        voltage_contact["Floating"] = False
         voltage_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
         voltage_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
         voltage_contact["MaxMeshSize"] = max_mesh_size
@@ -326,7 +350,8 @@ def main() -> None:
 
 def model_electrode():
     """
-    This function models the electrode with the specified number of contacts.
+    This function models the electrode with the specified number of contacts and 
+    stimulates the first segemented electrode on each.
 
     Args:
         modeler (CustomElectrodeModeler): The CustomElectrodeModeler instance.
