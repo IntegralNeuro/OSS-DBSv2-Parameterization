@@ -278,7 +278,7 @@ class CustomElectrodeModeler:
         except subprocess.CalledProcessError as err:
             print("Error running oss-dbs:", err)
 
-    def plot_electrode(self, output_path=None) -> None:
+    def analyze_electrode(self, output_path=None) -> None:
         if output_path:
             self.output_path = output_path
         title = f"OSS-DBS Electrode Model: {self.output_path}"
@@ -337,6 +337,11 @@ class CustomElectrodeModeler:
             self.plotter.add_text(filename, position=(40, 10 + i * 30), font_size=10)
         self.plotter.title = title
         self.plotter.add_text(title, position="upper_left", color="white", font_size=16)
+    
+    def plot_electrode(self, output_path=None) -> None:
+        if output_path:
+            self.output_path = output_path
+        self.analyze_electrode()
         self.plotter.show_grid()
         self.plotter.show()
 

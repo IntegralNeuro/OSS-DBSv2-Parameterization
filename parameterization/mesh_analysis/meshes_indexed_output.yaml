@@ -1,0 +1,723 @@
+boundaries [0. 0. 0. ... 2. 2. 2.]
+vtkOpenGLActor (000001B85D2ABF10)
+  Debug: Off
+  Modified Time: 2048
+  Reference Count: 2
+  Registered Events: (none)
+  Dragable: On
+  Pickable: On
+  AllocatedRenderTime: 10
+  EstimatedRenderTime: 0
+  NumberOfConsumers: 1
+  RenderTimeMultiplier: 1
+  Visibility: On
+  PropertyKeys: none.
+  useBounds: 1
+  IsIdentity: false
+  Position: (0, 0, 0)
+  Orientation: (0, 0, 0)
+  Origin: (0, 0, 0)
+  Scale: (1, 1, 1)
+  Bounds:
+    Xmin,Xmax: (10.8665, 12.1665)
+    Ymin,Ymax: (-15.0303, -13.7303)
+    Zmin,Zmax: (-9.49493, 25.5051)
+  UserTransform: 000001B85D2801D0
+  UserMatrix: 000001B85D2A6EB0
+  Mapper:
+    Debug: Off
+    Modified Time: 2038
+    Reference Count: 3
+    Registered Events: (none)
+    Executive: 000001B85D158ED0
+    ErrorCode: No error
+    Information: 000001B85D1AF3C0
+    AbortExecute: Off
+    Progress: 1
+    Progress Text: (None)
+    TimeToDraw: 0
+    ClippingPlanes: (none)
+    Lookup Table:
+      Debug: Off
+      Modified Time: 2026
+      Reference Count: 2
+      Registered Events: (none)
+      Alpha: 1
+      VectorMode: Component
+      VectorComponent: 0
+      VectorSize: -1
+      IndexedLookup: OFF
+      AnnotatedValues: 0 entries.
+      TableRange: (-1, 10)
+      Scale: Linear
+      HueRange: (0, 0.66667)
+      SaturationRange: (1, 1)
+      ValueRange: (1, 1)
+      AlphaRange: (1, 1)
+      NanColor: (0.662745, 0.662745, 0.662745, 1)
+      BelowRangeColor: (0, 0, 0, 1)
+      UseBelowRangeColor: OFF
+      AboveRangeColor: (1, 1, 1, 1)
+      UseAboveRangeColor: OFF
+      NumberOfTableValues: 256
+      NumberOfColors: 256
+      Ramp: SCurve
+      InsertTime: 2024
+      BuildTime: 1921
+      Table:
+        Debug: Off
+        Modified Time: 2022
+        Reference Count: 1
+        Registered Events: (none)
+        Name: (none)
+        Data type: unsigned char
+        Size: 2064
+        MaxId: 1023
+        NumberOfComponents: 4
+        Information: 0000000000000000
+        Name: (none)
+        Number Of Components: 4
+        Number Of Tuples: 256
+        Size: 2064
+        MaxId: 1023
+        LookupTable: (none)
+    Scalar Visibility: On
+    Static: Off
+    Scalar Range: (-1, 10)
+    UseLookupTableScalarRange: 0
+    Color Mode: MapScalars
+    InterpolateScalarsBeforeMapping: On
+    Scalar Mode: UsePointData
+    RenderTime: 0
+    Resolve Coincident Topology: Off
+    CoincidentPointOffset: 0
+    CoincidentLineOffset: 0
+    CoincidentPolygonOffset: 0
+    CoincidentLineFactor: 0
+    CoincidentPolygonFactor: 0
+    Poly Mapper: (none)
+    Geometry Extractor: (none)
+  Property:
+    Debug: Off
+    Modified Time: 2045
+    Reference Count: 1
+    Registered Events: (none)
+    Ambient: 0
+    Ambient Color: (0.678431, 0.847059, 0.901961)
+    Diffuse: 1
+    Diffuse Color: (0.678431, 0.847059, 0.901961)
+    Edge Color: (0, 0, 0)
+    Edge Visibility: Off
+    Vertex Color: (0.5, 1, 0.5)
+    Vertex Visibility: Off
+    Interpolation: VTK_FLAT
+    Opacity: 1
+    Representation: VTK_SURFACE
+    Specular: 0
+    Specular Color: (0.678431, 0.847059, 0.901961)
+    Specular Power: 100
+    Backface Culling: Off
+    Frontface Culling: Off
+    Point size: 5
+    Line width: 1
+    Line stipple pattern: 65535
+    Line stipple repeat factor: 1
+    Lighting: On
+    RenderPointsAsSpheres: Off
+    RenderLinesAsTubes: Off
+    ShowTexturesOnBackface: On
+    Shading: Off
+    MaterialName: (none)
+    Color: (0.678431, 0.847059, 0.901961)
+    EmissiveFactor: (1, 1, 1)
+    NormalScale: 1
+    OcclusionStrength: 1
+    Metallic: 0
+    Roughness: 0.5
+  BackfaceProperty: (none)
+  Texture: (none)
+  ForceOpaque: false
+  ForceTranslucent: false
+
+
+
+
+conductivity_real [0.06948254 0.06948254 0.06948254 ... 0.06948254 0.06948254 0.06948254]
+vtkOpenGLActor (000001B85D2B25E0)
+  Debug: Off
+  Modified Time: 5945
+  Reference Count: 2
+  Registered Events: (none)
+  Dragable: On
+  Pickable: On
+  AllocatedRenderTime: 10
+  EstimatedRenderTime: 0
+  NumberOfConsumers: 1
+  RenderTimeMultiplier: 1
+  Visibility: Off
+  PropertyKeys: none.
+  useBounds: 1
+  IsIdentity: false
+  Position: (0, 0, 0)
+  Orientation: (0, 0, 0)
+  Origin: (0, 0, 0)
+  Scale: (1, 1, 1)
+  Bounds:
+    Xmin,Xmax: (-22.9373, 46.7479)
+    Ymin,Ymax: (-48.8097, 20.9186)
+    Zmin,Zmax: (-43.8593, 26.1402)
+  UserTransform: 000001B85D27F4C0
+  UserMatrix: 000001B85D3C8AB0
+  Mapper:
+    Debug: Off
+    Modified Time: 4675
+    Reference Count: 3
+    Registered Events: (none)
+    Executive: 000001B85AEDACE0
+    ErrorCode: No error
+    Information: 000001B85D3F6060
+    AbortExecute: Off
+    Progress: 1
+    Progress Text: (None)
+    TimeToDraw: 0
+    ClippingPlanes: (none)
+    Lookup Table:
+      Debug: Off
+      Modified Time: 4663
+      Reference Count: 2
+      Registered Events: (none)
+      Alpha: 1
+      VectorMode: Component
+      VectorComponent: 0
+      VectorSize: -1
+      IndexedLookup: OFF
+      AnnotatedValues: 0 entries.
+      TableRange: (0.0694825, 2)
+      Scale: Linear
+      HueRange: (0, 0.66667)
+      SaturationRange: (1, 1)
+      ValueRange: (1, 1)
+      AlphaRange: (1, 1)
+      NanColor: (0.662745, 0.662745, 0.662745, 1)
+      BelowRangeColor: (0, 0, 0, 1)
+      UseBelowRangeColor: OFF
+      AboveRangeColor: (1, 1, 1, 1)
+      UseAboveRangeColor: OFF
+      NumberOfTableValues: 256
+      NumberOfColors: 256
+      Ramp: SCurve
+      InsertTime: 4661
+      BuildTime: 4558
+      Table:
+        Debug: Off
+        Modified Time: 4659
+        Reference Count: 1
+        Registered Events: (none)
+        Name: (none)
+        Data type: unsigned char
+        Size: 2064
+        MaxId: 1023
+        NumberOfComponents: 4
+        Information: 0000000000000000
+        Name: (none)
+        Number Of Components: 4
+        Number Of Tuples: 256
+        Size: 2064
+        MaxId: 1023
+        LookupTable: (none)
+    Scalar Visibility: On
+    Static: Off
+    Scalar Range: (0.0694825, 2)
+    UseLookupTableScalarRange: 0
+    Color Mode: MapScalars
+    InterpolateScalarsBeforeMapping: On
+    Scalar Mode: UsePointData
+    RenderTime: 0
+    Resolve Coincident Topology: Off
+    CoincidentPointOffset: 0
+    CoincidentLineOffset: 0
+    CoincidentPolygonOffset: 0
+    CoincidentLineFactor: 0
+    CoincidentPolygonFactor: 0
+    Poly Mapper: (none)
+    Geometry Extractor: (none)
+  Property:
+    Debug: Off
+    Modified Time: 4684
+    Reference Count: 1
+    Registered Events: (none)
+    Ambient: 0
+    Ambient Color: (0.678431, 0.847059, 0.901961)
+    Diffuse: 1
+    Diffuse Color: (0.678431, 0.847059, 0.901961)
+    Edge Color: (0, 0, 0)
+    Edge Visibility: On
+    Vertex Color: (0.5, 1, 0.5)
+    Vertex Visibility: Off
+    Interpolation: VTK_FLAT
+    Opacity: 1
+    Representation: VTK_POINTS
+    Specular: 0
+    Specular Color: (0.678431, 0.847059, 0.901961)
+    Specular Power: 100
+    Backface Culling: Off
+    Frontface Culling: Off
+    Point size: 5
+    Line width: 1
+    Line stipple pattern: 65535
+    Line stipple repeat factor: 1
+    Lighting: On
+    RenderPointsAsSpheres: Off
+    RenderLinesAsTubes: Off
+    ShowTexturesOnBackface: On
+    Shading: Off
+    MaterialName: (none)
+    Color: (0.678431, 0.847059, 0.901961)
+    EmissiveFactor: (1, 1, 1)
+    NormalScale: 1
+    OcclusionStrength: 1
+    Metallic: 0
+    Roughness: 0.5
+  BackfaceProperty: (none)
+  Texture: (none)
+  ForceOpaque: false
+  ForceTranslucent: false
+
+
+
+
+E_field_real [[ 2.27086446e+01  4.12118082e+03  1.12916095e+03]
+ [ 5.53195354e+01  4.27915785e+03  3.76164793e+02]
+ [-4.21515865e+02  3.93827309e+03  3.22177923e+02]
+ ...
+ [ 8.28963402e-01  5.68897386e+00  1.98550317e+02]
+ [ 5.85502829e+00  7.39066603e+00  1.81304410e+02]
+ [-8.49448494e+00 -1.68126576e+01  1.78382023e+02]]
+vtkOpenGLActor (000001B85D2AC140)
+  Debug: Off
+  Modified Time: 8585
+  Reference Count: 2
+  Registered Events: (none)
+  Dragable: On
+  Pickable: On
+  AllocatedRenderTime: 10
+  EstimatedRenderTime: 0
+  NumberOfConsumers: 1
+  RenderTimeMultiplier: 1
+  Visibility: Off
+  PropertyKeys: none.
+  useBounds: 1
+  IsIdentity: false
+  Position: (0, 0, 0)
+  Orientation: (0, 0, 0)
+  Origin: (0, 0, 0)
+  Scale: (1, 1, 1)
+  Bounds:
+    Xmin,Xmax: (-22.9373, 46.7479)
+    Ymin,Ymax: (-48.8097, 20.9186)
+    Zmin,Zmax: (-43.8593, 26.1402)
+  UserTransform: 000001B85D2803E0
+  UserMatrix: 000001B85D481DB0
+  Mapper:
+    Debug: Off
+    Modified Time: 7315
+    Reference Count: 3
+    Registered Events: (none)
+    Executive: 000001B85D45C8D0
+    ErrorCode: No error
+    Information: 000001B85D400B70
+    AbortExecute: Off
+    Progress: 1
+    Progress Text: (None)
+    TimeToDraw: 0
+    ClippingPlanes: (none)
+    Lookup Table:
+      Debug: Off
+      Modified Time: 7303
+      Reference Count: 2
+      Registered Events: (none)
+      Alpha: 1
+      VectorMode: Component
+      VectorComponent: 0
+      VectorSize: -1
+      IndexedLookup: OFF
+      AnnotatedValues: 0 entries.
+      TableRange: (0.000565034, 194856)
+      Scale: Linear
+      HueRange: (0, 0.66667)
+      SaturationRange: (1, 1)
+      ValueRange: (1, 1)
+      AlphaRange: (1, 1)
+      NanColor: (0.662745, 0.662745, 0.662745, 1)
+      BelowRangeColor: (0, 0, 0, 1)
+      UseBelowRangeColor: OFF
+      AboveRangeColor: (1, 1, 1, 1)
+      UseAboveRangeColor: OFF
+      NumberOfTableValues: 256
+      NumberOfColors: 256
+      Ramp: SCurve
+      InsertTime: 7301
+      BuildTime: 7197
+      Table:
+        Debug: Off
+        Modified Time: 7299
+        Reference Count: 1
+        Registered Events: (none)
+        Name: (none)
+        Data type: unsigned char
+        Size: 2064
+        MaxId: 1023
+        NumberOfComponents: 4
+        Information: 0000000000000000
+        Name: (none)
+        Number Of Components: 4
+        Number Of Tuples: 256
+        Size: 2064
+        MaxId: 1023
+        LookupTable: (none)
+    Scalar Visibility: On
+    Static: Off
+    Scalar Range: (0.000565034, 194856)
+    UseLookupTableScalarRange: 0
+    Color Mode: MapScalars
+    InterpolateScalarsBeforeMapping: On
+    Scalar Mode: UsePointData
+    RenderTime: 0
+    Resolve Coincident Topology: Off
+    CoincidentPointOffset: 0
+    CoincidentLineOffset: 0
+    CoincidentPolygonOffset: 0
+    CoincidentLineFactor: 0
+    CoincidentPolygonFactor: 0
+    Poly Mapper: (none)
+    Geometry Extractor: (none)
+  Property:
+    Debug: Off
+    Modified Time: 7324
+    Reference Count: 1
+    Registered Events: (none)
+    Ambient: 0
+    Ambient Color: (0.678431, 0.847059, 0.901961)
+    Diffuse: 1
+    Diffuse Color: (0.678431, 0.847059, 0.901961)
+    Edge Color: (0, 0, 0)
+    Edge Visibility: On
+    Vertex Color: (0.5, 1, 0.5)
+    Vertex Visibility: Off
+    Interpolation: VTK_FLAT
+    Opacity: 1
+    Representation: VTK_POINTS
+    Specular: 0
+    Specular Color: (0.678431, 0.847059, 0.901961)
+    Specular Power: 100
+    Backface Culling: Off
+    Frontface Culling: Off
+    Point size: 5
+    Line width: 1
+    Line stipple pattern: 65535
+    Line stipple repeat factor: 1
+    Lighting: On
+    RenderPointsAsSpheres: Off
+    RenderLinesAsTubes: Off
+    ShowTexturesOnBackface: On
+    Shading: Off
+    MaterialName: (none)
+    Color: (0.678431, 0.847059, 0.901961)
+    EmissiveFactor: (1, 1, 1)
+    NormalScale: 1
+    OcclusionStrength: 1
+    Metallic: 0
+    Roughness: 0.5
+  BackfaceProperty: (none)
+  Texture: (none)
+  ForceOpaque: false
+  ForceTranslucent: false
+
+
+
+
+material_real [2. 2. 2. ... 2. 2. 2.]
+vtkOpenGLActor (000001B85D2B1460)
+  Debug: Off
+  Modified Time: 11224
+  Reference Count: 2
+  Registered Events: (none)
+  Dragable: On
+  Pickable: On
+  AllocatedRenderTime: 10
+  EstimatedRenderTime: 0
+  NumberOfConsumers: 1
+  RenderTimeMultiplier: 1
+  Visibility: Off
+  PropertyKeys: none.
+  useBounds: 1
+  IsIdentity: false
+  Position: (0, 0, 0)
+  Orientation: (0, 0, 0)
+  Origin: (0, 0, 0)
+  Scale: (1, 1, 1)
+  Bounds:
+    Xmin,Xmax: (-22.9373, 46.7479)
+    Ymin,Ymax: (-48.8097, 20.9186)
+    Zmin,Zmax: (-43.8593, 26.1402)
+  UserTransform: 000001B85D27F6D0
+  UserMatrix: 000001B85D625260
+  Mapper:
+    Debug: Off
+    Modified Time: 9954
+    Reference Count: 3
+    Registered Events: (none)
+    Executive: 000001B85D57FA80
+    ErrorCode: No error
+    Information: 000001B85D570EC0
+    AbortExecute: Off
+    Progress: 1
+    Progress Text: (None)
+    TimeToDraw: 0
+    ClippingPlanes: (none)
+    Lookup Table:
+      Debug: Off
+      Modified Time: 9942
+      Reference Count: 2
+      Registered Events: (none)
+      Alpha: 1
+      VectorMode: Component
+      VectorComponent: 0
+      VectorSize: -1
+      IndexedLookup: OFF
+      AnnotatedValues: 0 entries.
+      TableRange: (0, 3)
+      Scale: Linear
+      HueRange: (0, 0.66667)
+      SaturationRange: (1, 1)
+      ValueRange: (1, 1)
+      AlphaRange: (1, 1)
+      NanColor: (0.662745, 0.662745, 0.662745, 1)
+      BelowRangeColor: (0, 0, 0, 1)
+      UseBelowRangeColor: OFF
+      AboveRangeColor: (1, 1, 1, 1)
+      UseAboveRangeColor: OFF
+      NumberOfTableValues: 256
+      NumberOfColors: 256
+      Ramp: SCurve
+      InsertTime: 9940
+      BuildTime: 9836
+      Table:
+        Debug: Off
+        Modified Time: 9938
+        Reference Count: 1
+        Registered Events: (none)
+        Name: (none)
+        Data type: unsigned char
+        Size: 2064
+        MaxId: 1023
+        NumberOfComponents: 4
+        Information: 0000000000000000
+        Name: (none)
+        Number Of Components: 4
+        Number Of Tuples: 256
+        Size: 2064
+        MaxId: 1023
+        LookupTable: (none)
+    Scalar Visibility: On
+    Static: Off
+    Scalar Range: (0, 3)
+    UseLookupTableScalarRange: 0
+    Color Mode: MapScalars
+    InterpolateScalarsBeforeMapping: On
+    Scalar Mode: UsePointData
+    RenderTime: 0
+    Resolve Coincident Topology: Off
+    CoincidentPointOffset: 0
+    CoincidentLineOffset: 0
+    CoincidentPolygonOffset: 0
+    CoincidentLineFactor: 0
+    CoincidentPolygonFactor: 0
+    Poly Mapper: (none)
+    Geometry Extractor: (none)
+  Property:
+    Debug: Off
+    Modified Time: 9963
+    Reference Count: 1
+    Registered Events: (none)
+    Ambient: 0
+    Ambient Color: (0.678431, 0.847059, 0.901961)
+    Diffuse: 1
+    Diffuse Color: (0.678431, 0.847059, 0.901961)
+    Edge Color: (0, 0, 0)
+    Edge Visibility: On
+    Vertex Color: (0.5, 1, 0.5)
+    Vertex Visibility: Off
+    Interpolation: VTK_FLAT
+    Opacity: 1
+    Representation: VTK_POINTS
+    Specular: 0
+    Specular Color: (0.678431, 0.847059, 0.901961)
+    Specular Power: 100
+    Backface Culling: Off
+    Frontface Culling: Off
+    Point size: 5
+    Line width: 1
+    Line stipple pattern: 65535
+    Line stipple repeat factor: 1
+    Lighting: On
+    RenderPointsAsSpheres: Off
+    RenderLinesAsTubes: Off
+    ShowTexturesOnBackface: On
+    Shading: Off
+    MaterialName: (none)
+    Color: (0.678431, 0.847059, 0.901961)
+    EmissiveFactor: (1, 1, 1)
+    NormalScale: 1
+    OcclusionStrength: 1
+    Metallic: 0
+    Roughness: 0.5
+  BackfaceProperty: (none)
+  Texture: (none)
+  ForceOpaque: false
+  ForceTranslucent: false
+
+
+
+
+potential_real [3369.14218231 3422.36660685 3285.06180274 ...  579.10988282  537.37989917
+  555.91767557]
+vtkOpenGLActor (000001B85D2B1AF0)
+  Debug: Off
+  Modified Time: 13863
+  Reference Count: 2
+  Registered Events: (none)
+  Dragable: On
+  Pickable: On
+  AllocatedRenderTime: 10
+  EstimatedRenderTime: 0
+  NumberOfConsumers: 1
+  RenderTimeMultiplier: 1
+  Visibility: Off
+  PropertyKeys: none.
+  useBounds: 1
+  IsIdentity: false
+  Position: (0, 0, 0)
+  Orientation: (0, 0, 0)
+  Origin: (0, 0, 0)
+  Scale: (1, 1, 1)
+  Bounds:
+    Xmin,Xmax: (-22.9373, 46.7479)
+    Ymin,Ymax: (-48.8097, 20.9186)
+    Zmin,Zmax: (-43.8593, 26.1402)
+  UserTransform: 000001B85D629030
+  UserMatrix: 000001B85D621190
+  Mapper:
+    Debug: Off
+    Modified Time: 12593
+    Reference Count: 3
+    Registered Events: (none)
+    Executive: 000001B85D6DE770
+    ErrorCode: No error
+    Information: 000001B85D659CB0
+    AbortExecute: Off
+    Progress: 1
+    Progress Text: (None)
+    TimeToDraw: 0
+    ClippingPlanes: (none)
+    Lookup Table:
+      Debug: Off
+      Modified Time: 12581
+      Reference Count: 2
+      Registered Events: (none)
+      Alpha: 1
+      VectorMode: Component
+      VectorComponent: 0
+      VectorSize: -1
+      IndexedLookup: OFF
+      AnnotatedValues: 0 entries.
+      TableRange: (0, 7321.16)
+      Scale: Linear
+      HueRange: (0, 0.66667)
+      SaturationRange: (1, 1)
+      ValueRange: (1, 1)
+      AlphaRange: (1, 1)
+      NanColor: (0.662745, 0.662745, 0.662745, 1)
+      BelowRangeColor: (0, 0, 0, 1)
+      UseBelowRangeColor: OFF
+      AboveRangeColor: (1, 1, 1, 1)
+      UseAboveRangeColor: OFF
+      NumberOfTableValues: 256
+      NumberOfColors: 256
+      Ramp: SCurve
+      InsertTime: 12579
+      BuildTime: 12475
+      Table:
+        Debug: Off
+        Modified Time: 12577
+        Reference Count: 1
+        Registered Events: (none)
+        Name: (none)
+        Data type: unsigned char
+        Size: 2064
+        MaxId: 1023
+        NumberOfComponents: 4
+        Information: 0000000000000000
+        Name: (none)
+        Number Of Components: 4
+        Number Of Tuples: 256
+        Size: 2064
+        MaxId: 1023
+        LookupTable: (none)
+    Scalar Visibility: On
+    Static: Off
+    Scalar Range: (0, 7321.16)
+    UseLookupTableScalarRange: 0
+    Color Mode: MapScalars
+    InterpolateScalarsBeforeMapping: On
+    Scalar Mode: UsePointData
+    RenderTime: 0
+    Resolve Coincident Topology: Off
+    CoincidentPointOffset: 0
+    CoincidentLineOffset: 0
+    CoincidentPolygonOffset: 0
+    CoincidentLineFactor: 0
+    CoincidentPolygonFactor: 0
+    Poly Mapper: (none)
+    Geometry Extractor: (none)
+  Property:
+    Debug: Off
+    Modified Time: 12602
+    Reference Count: 1
+    Registered Events: (none)
+    Ambient: 0
+    Ambient Color: (0.678431, 0.847059, 0.901961)
+    Diffuse: 1
+    Diffuse Color: (0.678431, 0.847059, 0.901961)
+    Edge Color: (0, 0, 0)
+    Edge Visibility: On
+    Vertex Color: (0.5, 1, 0.5)
+    Vertex Visibility: Off
+    Interpolation: VTK_FLAT
+    Opacity: 1
+    Representation: VTK_POINTS
+    Specular: 0
+    Specular Color: (0.678431, 0.847059, 0.901961)
+    Specular Power: 100
+    Backface Culling: Off
+    Frontface Culling: Off
+    Point size: 5
+    Line width: 1
+    Line stipple pattern: 65535
+    Line stipple repeat factor: 1
+    Lighting: On
+    RenderPointsAsSpheres: Off
+    RenderLinesAsTubes: Off
+    ShowTexturesOnBackface: On
+    Shading: Off
+    MaterialName: (none)
+    Color: (0.678431, 0.847059, 0.901961)
+    EmissiveFactor: (1, 1, 1)
+    NormalScale: 1
+    OcclusionStrength: 1
+    Metallic: 0
+    Roughness: 0.5
+  BackfaceProperty: (none)
+  Texture: (none)
+  ForceOpaque: false
+  ForceTranslucent: false

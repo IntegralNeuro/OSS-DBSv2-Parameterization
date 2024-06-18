@@ -1,0 +1,256 @@
+Actor (0x2a08937e0a0)
+  Center:                     (11.516513034379656, -14.380337619624555, 8.00507125)
+  Pickable:                   True
+  Position:                   (0.0, 0.0, 0.0)
+  Scale:                      (1.0, 1.0, 1.0)
+  Visible:                    True
+  X Bounds                    1.087E+01, 1.217E+01
+  Y Bounds                    -1.503E+01, -1.373E+01
+  Z Bounds                    -9.495E+00, 2.551E+01
+  User matrix:                Set
+  Has mapper:                 True
+
+Property (0x2a0893be040)
+  Ambient:                     0.0
+  Ambient color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Anisotropy:                  0.0
+  Color:                       Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Culling:                     "none"
+  Diffuse:                     1.0
+  Diffuse color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Edge color:                  Color(name='black', hex='#000000ff', opacity=255)
+  Edge opacity:                1.0
+  Interpolation:               0
+  Lighting:                    True
+  Line width:                  1.0
+  Metallic:                    0.0
+  Opacity:                     1.0
+  Point size:                  5.0
+  Render lines as tubes:       False
+  Render points as spheres:    False
+  Roughness:                   0.5
+  Show edges:                  False
+  Specular:                    0.0
+  Specular color:              Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Specular power:              100.0
+  Style:                       "Surface"
+
+DataSetMapper (0x2a08937e3a0)
+  Scalar visibility:           True
+  Scalar range:                (-1.0, 10.0)
+  Interpolate before mapping:  True
+  Scalar map mode:             point
+  Color mode:                  map
+
+Attached dataset:
+UnstructuredGrid (0x2a0893be6a0)
+  N Cells:    4033
+  N Points:   12099
+  X Bounds:   1.087e+01, 1.217e+01
+  Y Bounds:   -1.503e+01, -1.373e+01
+  Z Bounds:   -9.495e+00, 2.551e+01
+  N Arrays:   2, Actor (0x2a08937e820)
+  Center:                     (11.905315968140714, -13.945545224374978, -8.859554680831073)
+  Pickable:                   True
+  Position:                   (0.0, 0.0, 0.0)
+  Scale:                      (1.0, 1.0, 1.0)
+  Visible:                    False
+  X Bounds                    -2.294E+01, 4.675E+01
+  Y Bounds                    -4.881E+01, 2.092E+01
+  Z Bounds                    -4.386E+01, 2.614E+01
+  User matrix:                Set
+  Has mapper:                 True
+
+Property (0x2a0893be640)
+  Ambient:                     0.0
+  Ambient color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Anisotropy:                  0.0
+  Color:                       Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Culling:                     "none"
+  Diffuse:                     1.0
+  Diffuse color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Edge color:                  Color(name='black', hex='#000000ff', opacity=255)
+  Edge opacity:                1.0
+  Interpolation:               0
+  Lighting:                    True
+  Line width:                  1.0
+  Metallic:                    0.0
+  Opacity:                     1.0
+  Point size:                  5.0
+  Render lines as tubes:       False
+  Render points as spheres:    False
+  Roughness:                   0.5
+  Show edges:                  True
+  Specular:                    0.0
+  Specular color:              Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Specular power:              100.0
+  Style:                       "Points"
+
+DataSetMapper (0x2a08937ea00)
+  Scalar visibility:           True
+  Scalar range:                (0.06948254368602125, 2.000000002302146)
+  Interpolate before mapping:  True
+  Scalar map mode:             point
+  Color mode:                  map
+
+Attached dataset:
+UnstructuredGrid (0x2a0893be5e0)
+  N Cells:    332129
+  N Points:   1328516
+  X Bounds:   -2.294e+01, 4.675e+01
+  Y Bounds:   -4.881e+01, 2.092e+01
+  Z Bounds:   -4.386e+01, 2.614e+01
+  N Arrays:   2, Actor (0x2a08937e880)
+  Center:                     (11.905315968140714, -13.945545224374978, -8.859554680831073)
+  Pickable:                   True
+  Position:                   (0.0, 0.0, 0.0)
+  Scale:                      (1.0, 1.0, 1.0)
+  Visible:                    False
+  X Bounds                    -2.294E+01, 4.675E+01
+  Y Bounds                    -4.881E+01, 2.092E+01
+  Z Bounds                    -4.386E+01, 2.614E+01
+  User matrix:                Set
+  Has mapper:                 True
+
+Property (0x2a0893be580)
+  Ambient:                     0.0
+  Ambient color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Anisotropy:                  0.0
+  Color:                       Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Culling:                     "none"
+  Diffuse:                     1.0
+  Diffuse color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Edge color:                  Color(name='black', hex='#000000ff', opacity=255)
+  Edge opacity:                1.0
+  Interpolation:               0
+  Lighting:                    True
+  Line width:                  1.0
+  Metallic:                    0.0
+  Opacity:                     1.0
+  Point size:                  5.0
+  Render lines as tubes:       False
+  Render points as spheres:    False
+  Roughness:                   0.5
+  Show edges:                  True
+  Specular:                    0.0
+  Specular color:              Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Specular power:              100.0
+  Style:                       "Points"
+
+DataSetMapper (0x2a08937ee20)
+  Scalar visibility:           True
+  Scalar range:                (0.0005650341566027997, 194855.8963084759)
+  Interpolate before mapping:  True
+  Scalar map mode:             point
+  Color mode:                  map
+
+Attached dataset:
+UnstructuredGrid (0x2a0893be5e0)
+  N Cells:    332129
+  N Points:   1328516
+  X Bounds:   -2.294e+01, 4.675e+01
+  Y Bounds:   -4.881e+01, 2.092e+01
+  Z Bounds:   -4.386e+01, 2.614e+01
+  N Arrays:   2, Actor (0x2a08937eee0)
+  Center:                     (11.905315968140714, -13.945545224374978, -8.859554680831073)
+  Pickable:                   True
+  Position:                   (0.0, 0.0, 0.0)
+  Scale:                      (1.0, 1.0, 1.0)
+  Visible:                    False
+  X Bounds                    -2.294E+01, 4.675E+01
+  Y Bounds                    -4.881E+01, 2.092E+01
+  Z Bounds                    -4.386E+01, 2.614E+01
+  User matrix:                Set
+  Has mapper:                 True
+
+Property (0x2a0893be340)
+  Ambient:                     0.0
+  Ambient color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Anisotropy:                  0.0
+  Color:                       Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Culling:                     "none"
+  Diffuse:                     1.0
+  Diffuse color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Edge color:                  Color(name='black', hex='#000000ff', opacity=255)
+  Edge opacity:                1.0
+  Interpolation:               0
+  Lighting:                    True
+  Line width:                  1.0
+  Metallic:                    0.0
+  Opacity:                     1.0
+  Point size:                  5.0
+  Render lines as tubes:       False
+  Render points as spheres:    False
+  Roughness:                   0.5
+  Show edges:                  True
+  Specular:                    0.0
+  Specular color:              Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Specular power:              100.0
+  Style:                       "Points"
+
+DataSetMapper (0x2a0893b6460)
+  Scalar visibility:           True
+  Scalar range:                (0.0, 3.0)
+  Interpolate before mapping:  True
+  Scalar map mode:             point
+  Color mode:                  map
+
+Attached dataset:
+UnstructuredGrid (0x2a0893be6a0)
+  N Cells:    332129
+  N Points:   1328516
+  X Bounds:   -2.294e+01, 4.675e+01
+  Y Bounds:   -4.881e+01, 2.092e+01
+  Z Bounds:   -4.386e+01, 2.614e+01
+  N Arrays:   2, Actor (0x2a0893b6220)
+  Center:                     (11.905315968140714, -13.945545224374978, -8.859554680831073)
+  Pickable:                   True
+  Position:                   (0.0, 0.0, 0.0)
+  Scale:                      (1.0, 1.0, 1.0)
+  Visible:                    False
+  X Bounds                    -2.294E+01, 4.675E+01
+  Y Bounds                    -4.881E+01, 2.092E+01
+  Z Bounds                    -4.386E+01, 2.614E+01
+  User matrix:                Set
+  Has mapper:                 True
+
+Property (0x2a0893be5e0)
+  Ambient:                     0.0
+  Ambient color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Anisotropy:                  0.0
+  Color:                       Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Culling:                     "none"
+  Diffuse:                     1.0
+  Diffuse color:               Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Edge color:                  Color(name='black', hex='#000000ff', opacity=255)
+  Edge opacity:                1.0
+  Interpolation:               0
+  Lighting:                    True
+  Line width:                  1.0
+  Metallic:                    0.0
+  Opacity:                     1.0
+  Point size:                  5.0
+  Render lines as tubes:       False
+  Render points as spheres:    False
+  Roughness:                   0.5
+  Show edges:                  True
+  Specular:                    0.0
+  Specular color:              Color(name='lightblue', hex='#add8e6ff', opacity=255)
+  Specular power:              100.0
+  Style:                       "Points"
+
+DataSetMapper (0x2a0893b69a0)
+  Scalar visibility:           True
+  Scalar range:                (0.0, 7321.158756946337)
+  Interpolate before mapping:  True
+  Scalar map mode:             point
+  Color mode:                  map
+
+Attached dataset:
+UnstructuredGrid (0x2a0893b6a60)
+  N Cells:    332129
+  N Points:   1328516
+  X Bounds:   -2.294e+01, 4.675e+01
+  Y Bounds:   -4.881e+01, 2.092e+01
+  Z Bounds:   -4.386e+01, 2.614e+01
+  N Arrays:   2]
