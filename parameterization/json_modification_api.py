@@ -138,14 +138,10 @@ class CustomElectrodeModeler:
             ]:
                 if locals().get(key):
                     custom_params[key] = locals()[key]
-        if custom_params["tip_contact"] is True:
-            custom_params["_n_contacts"] = custom_params["n_segments_per_level"] * (
-                custom_params["levels"] - 1
-            ) + int(custom_params["tip_contact"])
-        else:
-            custom_params["_n_contacts"] = (
-                custom_params["n_segments_per_level"] * custom_params["levels"]
-            )
+        custom_params["_n_contacts"] = (
+            custom_params["n_segments_per_level"]
+            * (len(custom_params["segmented_levels"]))
+        ) + (custom_params["levels"] - len(custom_params["segmented_levels"]))
 
     def modify_surface_parameters(
         self, name="BrainSurface", active=None, current_a=None, voltage_v=None
@@ -197,17 +193,17 @@ class CustomElectrodeModeler:
         max_mesh_size=1.0,
         max_mesh_size_edge=0.035,
     ) -> None:
-        floating_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
-        floating_contact["Contact_ID"] = contact_id
-        floating_contact["Active"] = True
-        floating_contact["Current[A]"] = current_a
-        floating_contact["Voltage[V]"] = 0.0
-        floating_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
-        floating_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
-        floating_contact["MaxMeshSize"] = max_mesh_size
-        floating_contact["MaxMeshSizeEdge"] = max_mesh_size_edge
-        self.custom_contacts.append(floating_contact)
-        return floating_contact
+        current_ground_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
+        current_ground_contact["Contact_ID"] = contact_id
+        current_ground_contact["Active"] = True
+        current_ground_contact["Current[A]"] = current_a
+        current_ground_contact["Voltage[V]"] = 0.0
+        current_ground_contact["SurfaceImpedance[Ohmm]"]["real"] = impedance_real
+        current_ground_contact["SurfaceImpedance[Ohmm]"]["imag"] = impedance_imag
+        current_ground_contact["MaxMeshSize"] = max_mesh_size
+        current_ground_contact["MaxMeshSizeEdge"] = max_mesh_size_edge
+        self.custom_contacts.append(current_ground_contact)
+        return current_ground_contact
 
     def generate_current_contact(
         self,
