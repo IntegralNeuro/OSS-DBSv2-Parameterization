@@ -191,7 +191,6 @@ class CustomElectrodeModeler:
     ) -> None:
         floating_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
         floating_contact["Contact_ID"] = contact_id
-        floating_contact["Floating"] = True
         floating_contact["Active"] = True
         floating_contact["Current[A]"] = current_a
         floating_contact["Voltage[V]"] = 0.0
