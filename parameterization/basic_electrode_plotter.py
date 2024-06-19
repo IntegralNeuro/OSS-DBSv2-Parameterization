@@ -55,10 +55,9 @@ def plot_electrode(input_folder: str, analyze_flag: bool) -> None:
     else:    
         electrode.plot_electrode(input_folder)    
     for key in electrode.scalar_array_actor.keys():
-        print()
-        print(electrode.scalars[key], electrode.scalar_array_actor[key])
-        print(electrode.meshes[key])
-        print()
+        df = pd.DataFrame(electrode.scalar_array_actor[key])
+        df.to_csv(f"{input_folder}/scalars_{electrode.scalars[key]}.csv")
+        print(f"Saved scalars to {input_folder}/scalars_{electrode.scalars[key]}.csv")
 
 
 if __name__ == "__main__":
