@@ -56,7 +56,7 @@ class CustomElectrodeModeler:
         self.input_dict = self.generate_input_dictionary_template()
         self.initial_contacts = self.input_dict["Electrodes"][0]["Contacts"]
 
-    def update_parameters(self) -> dict:
+    def update_parameters(self, surface_ground=True) -> dict:
         """
         Updates parameters from the input dictionary based on the number of contacts specified.
 
@@ -66,17 +66,20 @@ class CustomElectrodeModeler:
         Returns:
             None
         """
+        # set _n_contacts
         self.input_dict["Electrodes"][0]["Contacts"] = self.custom_contacts
         n_contacts_existing = len(self.input_dict["Electrodes"][0]["Contacts"])
         self.modify_electrode_custom_parameters(_n_contacts=n_contacts_existing)
-        total_current_a = 0.0
-        for i in self.custom_contacts:
-            if i["Current[A]"] is not False:
-                if i["Current[A]"] != 0.0:
-                    total_current_a += i["Current[A]"]
-        total_current_a = -total_current_a
-        self.modify_surface_parameters(name="BrainSurface", current_a=total_current_a)
-        self.custom_contacts = []
+        # set brain surface current (if the surfacer is the ground path)
+        if surface_ground:
+            total_current_a = 0.0
+            for i in self.custom_contacts:
+                if i["Current[A]"] is not False:
+                    if i["Current[A]"] != 0.0:
+                        total_current_a += i["Current[A]"]
+            total_current_a = -total_current_a
+            self.modify_surface_parameters(name="BrainSurface", current_a=total_current_a)
+            self.custom_contacts = []
 
     def generate_input_dictionary_template(self) -> dict:
         """
@@ -138,10 +141,20 @@ class CustomElectrodeModeler:
             ]:
                 if locals().get(key):
                     custom_params[key] = locals()[key]
-        custom_params["_n_contacts"] = (
-            custom_params["n_segments_per_level"]
-            * (len(custom_params["segmented_levels"]))
-        ) + (custom_params["levels"] - len(custom_params["segmented_levels"]))
+        # can't segment the tip contact
+        if custom_params["tip_contact"] and (1 in custom_params["segmented_levels"]):
+            raise ValueError("Cannot segment the tip contact")
+        # check and update n_contacts
+        n_segmented_levels = len(custom_params["segmented_levels"])
+        n_contacts_from_params = (
+            custom_params["n_segments_per_level"] * n_segmented_levels +
+            (custom_params["levels"] - n_segmented_levels))
+        if _n_contacts is not None:
+            if _n_contacts != n_contacts_from_params:
+                raise ValueError(
+                    f"Number of contacts specified ({_n_contacts}) does not match the number of contacts from the parameters ({n_contacts_from_params})"
+                )
+        custom_params["_n_contacts"] = n_contacts_from_params
 
     def modify_surface_parameters(
         self, name="BrainSurface", active=None, current_a=None, voltage_v=None
