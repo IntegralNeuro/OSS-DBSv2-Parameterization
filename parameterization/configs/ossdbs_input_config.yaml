@@ -145,7 +145,7 @@ ossdbs_input_json:
         Current[A]: 0.0
         Voltage[V]: 0.0
     MaterialDistribution:
-      MRIPath: "segmask.nii"
+      MRIPath: "segmask_white_matter.nii"
       MRIMapping:
         Blood: 4
         "Gray matter": 1
