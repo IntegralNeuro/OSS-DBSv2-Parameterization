@@ -56,7 +56,7 @@ class CustomElectrodeModeler:
         self.input_dict = self.generate_input_dictionary_template()
         self.initial_contacts = self.input_dict["Electrodes"][0]["Contacts"]
 
-    def update_parameters(self, surface_ground=True) -> dict:
+    def update_parameters(self) -> dict:
         """
         Updates parameters from the input dictionary based on the number of contacts specified.
 
@@ -71,15 +71,14 @@ class CustomElectrodeModeler:
         n_contacts_existing = len(self.input_dict["Electrodes"][0]["Contacts"])
         self.modify_electrode_custom_parameters(_n_contacts=n_contacts_existing)
         # set brain surface current (if the surfacer is the ground path)
-        if surface_ground:
-            total_current_a = 0.0
-            for i in self.custom_contacts:
-                if i["Current[A]"] is not False:
-                    if i["Current[A]"] != 0.0:
-                        total_current_a += i["Current[A]"]
-            total_current_a = -total_current_a
-            self.modify_surface_parameters(name="BrainSurface", current_a=total_current_a)
-            self.custom_contacts = []
+        total_current_a = 0.0
+        for i in self.custom_contacts:
+            if i["Current[A]"] is not False:
+                if i["Current[A]"] != 0.0:
+                    total_current_a += i["Current[A]"]
+        total_current_a = -total_current_a
+        self.modify_surface_parameters(name="BrainSurface", current_a=total_current_a)
+        self.custom_contacts = []
 
     def generate_input_dictionary_template(self) -> dict:
         """
