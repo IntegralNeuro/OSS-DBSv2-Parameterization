@@ -60,13 +60,14 @@ def plot_slice(img_data, slice_index):
     plt.axis('off')
     plt.show()
 
-def plot_3d_with_slider(img_data):
+def plot_3d(img_data):
     """
-    Plot a 3D visualization of the image data using PyVista with a slider for dynamic cross-sections.
+    Plot a 3D visualization of the image data using PyVista.
     
     Parameters:
     img_data (numpy.ndarray): The image data.
     """
+    img_data = np.where(img_data == 0, np.nan, img_data)
     # Create a PyVista grid from the image data
     grid = pv.ImageData(dimensions=img_data.shape)
     grid.spacing = (1, 1, 1)  # Spacing between grid points
@@ -75,18 +76,10 @@ def plot_3d_with_slider(img_data):
 
     # Set up the plotter
     p = pv.Plotter()
-    
+    opacity = [0, 0, 0, 0.1, 0.3, 0.6, 0.9, 1]
     # Add the volume with improved opacity settings
-    opacity = [0, 0, 0, 0.1, 0.3, 0.6, 0.9, 1]  # Adjust opacity transfer function
-    p.add_volume(grid, scalars='values', cmap='gray_r', opacity=opacity)
+    p.add_volume(grid, scalars='values', cmap='gray', opacity=opacity)
 
-    # Add a slider to move through the slices
-    def callback(value):
-        p.clear_slices()
-        slice_index = int(value)
-        p.slice(normal='z', origin=(0, 0, slice_index))
-    
-    p.add_slider_widget(callback, [0, img_data.shape[2] - 1], title="Slice", value=img_data.shape[2] // 2)
     p.set_background('slategray')
     # Show the plotter
     p.show()
@@ -128,8 +121,8 @@ if __name__ == "__main__":
     img_data, header = load_nii(file_path)
     
     # Plot a slice (e.g., the middle slice)
-    slice_index = img_data.shape[2] // 2
-    plot_slice(img_data, slice_index)
+    # slice_index = img_data.shape[2] // 2
+    # plot_slice(img_data, slice_index)
     
-    # # Plot a 3D visualization with slider
-    # plot_3d_with_slider(img_data)
+    # Plot a 3D visualization with slider
+    plot_3d(img_data)

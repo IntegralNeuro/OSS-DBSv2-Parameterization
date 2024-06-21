@@ -1,5 +1,6 @@
 import argparse
 
+import numpy as np # type: ignore
 import pandas as pd # type: ignore
 from json_modification_api import CustomElectrodeModeler
 
@@ -49,15 +50,34 @@ def plot_electrode(input_folder: str, analyze_flag: bool) -> None:
     Returns:
         None
     """
+    i = 0
     electrode = CustomElectrodeModeler()
     if analyze_flag:
-        electrode.analyze_electrode(input_folder)
+        points = electrode.analyze_electrode(input_folder)
     else:    
-        electrode.plot_electrode(input_folder)    
+        electrode.plot_electrode(input_folder)
+    print(electrode.scalar_array_actor.keys())
     for key in electrode.scalar_array_actor.keys():
-        df = pd.DataFrame(electrode.scalar_array_actor[key])
-        df.to_csv(f"{input_folder}/scalars_{electrode.scalars[key]}.csv")
-        print(f"Saved scalars to {input_folder}/scalars_{electrode.scalars[key]}.csv")
+        if key == "E-field.vtu":
+            combined_df = pd.concat([pd.DataFrame(points[i]), pd.DataFrame(electrode.scalar_array_actor[key])], axis=1)
+            combined_df.columns = ["x-pt", "y-pt", "z-pt", "x-field", "y-field", "z-field"]
+            combined_df["magnitude"] = np.sqrt(combined_df["x-field"]**2 + combined_df["y-field"]**2 + combined_df["z-field"]**2)
+            combined_df.to_csv(f"{input_folder}/combined_{electrode.scalars[i]}.csv")
+            print(f"Saved combined data to {input_folder}/combined_{electrode.scalars[i]}.csv")
+        elif key == "E-field_gradient":
+            combined_df = pd.concat([pd.DataFrame(points[i]), pd.DataFrame(electrode.scalar_array_actor[key])], axis=1)
+            combined_df.columns = ["x-pt", "y-pt", "z-pt", "dxx", "dxy", "dxz", "dyx", "dyy", "dyz", "dzx", "dzy", "dzz"]
+            combined_df.to_csv(f"{input_folder}/combined_E_field_gradient.csv")
+            print(f"Saved combined data to {input_folder}/combined_E_field_gradient.csv")
+            i += 1
+        else:
+            combined_df = pd.concat([pd.DataFrame(points[i]), pd.DataFrame(electrode.scalar_array_actor[key])], axis=1)
+            combined_df.columns = ["x-pt", "y-pt", "z-pt", "scalar"]
+            combined_df.to_csv(f"{input_folder}/combined_{electrode.scalars[i]}.csv")
+            print(f"Saved combined data to {input_folder}/combined_{electrode.scalars[i]}.csv")
+            i += 1
+    
+
 
 
 if __name__ == "__main__":
