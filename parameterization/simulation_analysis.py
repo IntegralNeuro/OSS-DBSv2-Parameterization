@@ -24,4 +24,3 @@ def load_vtu(vtu_file: str) -> tuple:
     for i, name in enumerate(mesh.array_names):
         values.append(mesh[mesh.array_names[i]])
     return mesh.points, values, mesh.array_names
-
