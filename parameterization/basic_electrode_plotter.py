@@ -4,7 +4,7 @@ import numpy as np # type: ignore
 import pandas as pd # type: ignore
 from json_modification_api import CustomElectrodeModeler
 
-DEFAULT_INPUT_FOLDER = "./results_example"
+DEFAULT_INPUT_FOLDER = "./plotter_example"
 
 def main() -> None:
     """
