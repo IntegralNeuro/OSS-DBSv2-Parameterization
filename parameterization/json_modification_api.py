@@ -294,15 +294,17 @@ class CustomElectrodeModeler:
         if output_path:
             self.output_path = output_path
         title = f"OSS-DBS Electrode Model: {self.output_path}"
+        points_actor = []
         for i, filename in enumerate(self.filenames):
             if filename == "electrode_1.vtu":
                 electrode = pv.read(f"{self.output_path}/{filename}")
-                self.scalar_array_actor[i] = electrode[self.scalars[i]]
+                self.scalar_array_actor[filename] = electrode[self.scalars[i]]
+                points_actor.append(electrode.points)
                 mesh_actor = self.plotter.add_mesh(
                     electrode,
                     show_edges=False,
                     name=filename,
-                    scalars=self.scalar_array_actor[i],
+                    scalars=self.scalar_array_actor[filename],
                     scalar_bar_args={
                         "title": self.scalars[i],
                         "title_font_size": 15,
@@ -316,13 +318,14 @@ class CustomElectrodeModeler:
                 )
             else:
                 mesh = pv.read(f"{self.output_path}/{filename}")
-                self.scalar_array_actor[i] = mesh[self.scalars[i]]
+                self.scalar_array_actor[filename] = mesh[self.scalars[i]]
+                points_actor.append(mesh.points)
                 mesh_actor = self.plotter.add_mesh(
                     mesh,
                     style="points",
                     show_edges=True,
                     name=filename,
-                    scalars=self.scalar_array_actor[i],
+                    scalars=self.scalar_array_actor[filename],
                     scalar_bar_args={
                         "title": self.scalars[i],
                         "title_font_size": 15,
@@ -336,7 +339,7 @@ class CustomElectrodeModeler:
                 )
                 mesh_actor.SetVisibility(False)
                 print(
-                    f"{filename} MIN: {self.scalar_array_actor[i].min()}, MAX: {self.scalar_array_actor[i].max()}"
+                    f"{filename} MIN: {self.scalar_array_actor[filename].min()}, MAX: {self.scalar_array_actor[filename].max()}"
                 )
             self.meshes.append(mesh_actor)
             self.plotter.add_checkbox_button_widget(
@@ -347,8 +350,13 @@ class CustomElectrodeModeler:
                 size=20,  # Optional: size of the checkbox
             )
             self.plotter.add_text(filename, position=(40, 10 + i * 30), font_size=10)
+            if filename == "E-field.vtu":
+                mesh = pv.read(f"{self.output_path}/{filename}")
+                gradient = mesh.compute_derivative(scalars=self.scalars[i], gradient=True)
+                self.scalar_array_actor["E-field_gradient"] = gradient["gradient"]
         self.plotter.title = title
         self.plotter.add_text(title, position="upper_left", color="white", font_size=16)
+        return points_actor
     
     def plot_electrode(self, output_path=None) -> None:
         if output_path:

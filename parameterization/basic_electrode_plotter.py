@@ -1,9 +1,11 @@
 import argparse
 
+import matplotlib.pyplot as plt
+import numpy as np # type: ignore
 import pandas as pd # type: ignore
 from json_modification_api import CustomElectrodeModeler
 
-DEFAULT_INPUT_FOLDER = "./results_example"
+DEFAULT_INPUT_FOLDER = "./plotter_example"
 
 def main() -> None:
     """
@@ -49,15 +51,77 @@ def plot_electrode(input_folder: str, analyze_flag: bool) -> None:
     Returns:
         None
     """
+    i = 0
     electrode = CustomElectrodeModeler()
     if analyze_flag:
-        electrode.analyze_electrode(input_folder)
+        points = electrode.analyze_electrode(input_folder)
     else:    
-        electrode.plot_electrode(input_folder)    
+        electrode.plot_electrode(input_folder)
+    generate_combined_files(input_folder, i, electrode, points) # Comment this out if you've already run it once for the folder you want
+    gradient = pd.read_csv(f"{input_folder}/combined_E_field_gradient.csv")
+    # Plotting the gradient
+    dxx = gradient["dxx"]
+    dxy = gradient["dxy"]
+    dxz = gradient["dxz"]
+    dyx = gradient["dyx"]
+    dyy = gradient["dyy"]
+    dyz = gradient["dyz"]
+    dzx = gradient["dzx"]
+    dzy = gradient["dzy"]
+    dzz = gradient["dzz"]
+    hessian = np.zeros((len(dxx), 3, 3))
+    frobenius_norm = [0] * len(dxx)
+    for i in range(len(dxx)):
+        hessian[i] = np.array([[dxx[i], dxy[i], dxz[i]],
+                               [dyx[i], dyy[i], dyz[i]],
+                               [dzx[i], dzy[i], dzz[i]]])
+        frobenius_norm[i] = np.linalg.norm(hessian[i], ord='fro')
+    plt.figure()
+    plt.plot(frobenius_norm)
+    plt.title("Frobenius Norm of the Hessian Matrix of the E-field Gradient")
+    plt.xlabel("Point Index")
+    plt.ylabel("Frobenius Norm (V/mm^2)")
+    plt.show()
+
+
+def generate_combined_files(input_folder, i, electrode, points) -> pd.DataFrame:
+    """
+    Generate combined CSV files containing the coordinates and scalar values of the electrode.
+
+    Args:
+        input_folder (str): The path to the folder where the combined CSV files will be saved.
+        i (int): The index of the electrode.
+        electrode (object): The electrode object containing scalar array actors.
+        points (list): The list of points corresponding to the electrode.
+
+    Returns:
+        pandas.DataFrame: The gradient dataframe if the key is "E-field_gradient", otherwise None.
+
+    Raises:
+        None
+
+    """
     for key in electrode.scalar_array_actor.keys():
-        df = pd.DataFrame(electrode.scalar_array_actor[key])
-        df.to_csv(f"{input_folder}/scalars_{electrode.scalars[key]}.csv")
-        print(f"Saved scalars to {input_folder}/scalars_{electrode.scalars[key]}.csv")
+        combined_df = pd.concat([pd.DataFrame(points[i]), pd.DataFrame(electrode.scalar_array_actor[key])], axis=1)
+        if key == "E-field.vtu":
+            combined_df.columns = ["x-pt", "y-pt", "z-pt", "x-field", "y-field", "z-field"]
+            combined_df["magnitude"] = np.sqrt(combined_df["x-field"]**2 + combined_df["y-field"]**2 + combined_df["z-field"]**2)
+            filename = f"{input_folder}/combined_{electrode.scalars[i]}.csv"
+        elif key == "E-field_gradient":
+            combined_df.columns = ["x-pt", "y-pt", "z-pt", "dxx", "dxy", "dxz", "dyx", "dyy", "dyz", "dzx", "dzy", "dzz"]
+            gradient = combined_df
+            filename = f"{input_folder}/combined_E_field_gradient.csv"
+            i += 1
+        else:
+            combined_df.columns = ["x-pt", "y-pt", "z-pt", "scalar"]
+            filename = f"{input_folder}/combined_{electrode.scalars[i]}.csv"
+            i += 1
+        combined_df.to_csv(filename)
+        print(f"Saved combined data to {filename}")
+    return gradient
+    
+    
+
 
 
 if __name__ == "__main__":
