@@ -1,7 +1,16 @@
 import pickle
 import numpy as np
 from matplotlib import pyplot as plt
+"""
+No longer used.
 
+Script for comparing the potential values across the various simulations in 
+test_linearity.test_linearity_multipolar()
+
+The goal of this script was to ensure that the resutls were qualitatively 
+similar for each single-contact monopolar simulation. These plots helped identify 
+the need for making homogenous brain models (e.g., segmask_white_matter.nii)
+"""
 
 exp_dir = 'results/experiment_linear_multipolar'
 filename = 'data.pkl'
