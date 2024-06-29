@@ -13,7 +13,7 @@ class MeshPlotter:
                  plot_potential: bool = False,
                  plot_Hessian: bool = False,
                  plot_VTA: bool = False,
-                 e_field_scale: float = 1e-5,
+                 e_field_scale: float = 1,
                  jitter_std: float = 0.0,
                  opacity: float = 1.0,
                  start_invisible: bool = False) -> None:
@@ -74,63 +74,78 @@ class MeshPlotter:
         else:
             return "viridis"
 
+    def _add_scalar(self,
+                    mesh: pv.PolyData,
+                    array_name: str,
+                    label: str) -> None:
+        if ("electrode" in array_name) or ("boundaries" in array_name):
+            is_electrode = True
+            kwargs = {
+                "style": "surface",
+                "show_edges": True,
+                "cmap": self._get_colormap(array_name),
+                "show_scalar_bar": False,
+            }
+        else:
+            is_electrode = False
+            kwargs = {
+                "style": "points",
+                "show_edges": True,
+                "cmap": self._get_colormap(array_name),
+                "scalar_bar_args": {
+                    "title": label,
+                    "title_font_size": 20,
+                    "label_font_size": 15,
+                    "position_x": 0.7,
+                    "position_y": 0.02 + 0.06 * self.subplot_scale_bar_count,
+                    "width": 0.25,
+                    "height": 0.03
+                }
+            }
+            mesh.points += np.random.normal(0, self.jitter_std, mesh.points.shape)
+            self.subplot_scale_bar_count += 1
+
+        mesh_actor = self.plotter.add_mesh(
+            mesh,
+            name=label,
+            scalars=mesh[array_name],
+            opacity=self.opacity,
+            **kwargs
+        )
+        if not is_electrode:
+            mesh_actor.SetVisibility(self.start_visible)
+        return mesh_actor
+
+    def _add_vector(self,
+                    mesh: pv.PolyData,
+                    array_name: str,
+                    label: str) -> None:
+        arrows = mesh.glyph(factor=self.e_field_scale, scale=array_name, orient=array_name)
+        kwargs = {
+            "show_edges": False,
+            "color": "black",
+            "show_scalar_bar": False,
+        }
+        mesh_actor = self.plotter.add_mesh(
+            arrows,
+            name=label,
+            opacity=self.opacity,
+            **kwargs
+        )
+        mesh_actor.SetVisibility(self.start_visible)
+        return mesh_actor
+
     def add_mesh(self,
                  mesh: pv.PolyData,
                  array_name: str,
                  label: str = None) -> None:
         # Type specific kwargs
         label = label if label else array_name
-        is_electrode = False
-        if "E_field" not in array_name:
-            if ("electrode" in array_name) or ("boundaries" in array_name):
-                kwargs = {
-                    "style": "surface",
-                    "show_edges": True,
-                    "cmap": self._get_colormap(array_name),
-                    "show_scalar_bar": False,
-                }
-                is_electrode = True
-            else:
-                kwargs = {
-                    "style": "points",
-                    "show_edges": True,
-                    "cmap": self._get_colormap(array_name),
-                    "scalar_bar_args": {
-                        "title": label,
-                        "title_font_size": 20,
-                        "label_font_size": 15,
-                        "position_x": 0.7,
-                        "position_y": 0.02 + 0.06 * self.subplot_scale_bar_count,
-                        "width": 0.25,
-                        "height": 0.03
-                    }
-                }
-                mesh.points += np.random.normal(0, self.jitter_std, mesh.points.shape)
-                self.subplot_scale_bar_count += 1
-
-            mesh_actor = self.plotter.add_mesh(
-                mesh,
-                name=label,
-                scalars=mesh[array_name],
-                opacity=self.opacity,
-                **kwargs
-            )
-        else:
-            arrows = mesh.glyph(factor=self.e_field_scale, scale=array_name, orient=array_name)
-            kwargs = {
-                "show_edges": False,
-                "color": "black",
-                "show_scalar_bar": False,
-            }
-            mesh_actor = self.plotter.add_mesh(
-                arrows,
-                name=label,
-                opacity=self.opacity,
-                **kwargs
-            )
+        if mesh[array_name].ndim == 1:
+            mesh_actor = self._add_scalar(mesh, array_name, label)
+        elif mesh[array_name].shape[1] == 3:  # Vector mesh
+            mesh_actor = self._add_vector(mesh, array_name, label)
         self.mesh_actors.append(mesh_actor)
-        if not is_electrode:
-            mesh_actor.SetVisibility(self.start_visible)
 
     def add_toggle(self, label: str, initial_state: bool = True) -> None:
         self.plotter.add_checkbox_button_widget(
@@ -249,6 +264,7 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("-p", "--plot_potential", action="store_true", help="Plot potential")
     parser.add_argument("-H", "--plot_Hessian", action="store_true", help="Plot Hessian of potential")
     parser.add_argument("-v", "--plot_VTA", action="store_true", help="Plot VTAs")
+    parser.add_argument("-s", "--e_field_scale", type=float, default=1.0, help="Scale factor for E-field vectors")
     parser.add_argument("-j", "--jitter_std", type=float, default=0.0, help="Standard deviation for jittering the mesh points")
     parser.add_argument("-o", "--opacity", type=float, default=1.0, help="Plot opacity, in [0, 1]")
     parser.add_argument("-i", "--start_invisible", action="store_true", help="Start with scalar meshes toggeled to invisible")
@@ -281,6 +297,7 @@ def main() -> None:
         plot_potential=args.plot_potential,
         plot_Hessian=args.plot_Hessian,
         plot_VTA=args.plot_VTA,
+        e_field_scale=args.e_field_scale,
         jitter_std=args.jitter_std,
         opacity=args.opacity,
         start_invisible=args.start_invisible
