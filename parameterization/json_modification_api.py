@@ -138,7 +138,7 @@ class CustomElectrodeModeler:
                 "tip_contact",
                 "_n_contacts",
             ]:
-                if locals().get(key):
+                if locals().get(key) is not None:
                     custom_params[key] = locals()[key]
         # can't segment the tip contact
         if custom_params["tip_contact"] and (1 in custom_params["segmented_levels"]):
@@ -154,7 +154,7 @@ class CustomElectrodeModeler:
                     f"Number of contacts specified ({_n_contacts}) does not match the number of contacts from the parameters ({n_contacts_from_params})"
                 )
         custom_params["_n_contacts"] = n_contacts_from_params
-
+    
     def modify_surface_parameters(
         self, name="BrainSurface", active=None, current_a=None, voltage_v=None
     ):
