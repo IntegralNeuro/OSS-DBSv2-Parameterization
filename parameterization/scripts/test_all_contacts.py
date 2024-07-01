@@ -37,6 +37,7 @@ def simulate_all_contacts(dir_name, args) -> None:
             total_length=300.0,
             contact_length=args.contact_length,
             contact_spacing=args.contact_spacing,
+            segmented_levels=[],
             levels=args.levels,
             tip_contact=False,
         )
@@ -50,7 +51,7 @@ def simulate_all_contacts(dir_name, args) -> None:
             electrode.generate_current_contact(contact, 1.0)
             for i in range(n_contacts):
                 if not (i + 1) == contact:
-                    electrode.generate_voltage_contact(i + 1, 1.0)
+                    electrode.generate_unused_contact(i + 1, 1.0)
             electrode.update_parameters()
             electrode.modify_json_parameters()
             electrode.run_ossdbs()
