@@ -177,6 +177,17 @@ class CustomElectrodeModeler:
         """
         return self.input_dict["Electrodes"][0]["CustomParameters"]
 
+    def generate_unused_contact(
+        self,
+        contact_id,
+        max_mesh_size=1.0,
+        max_mesh_size_edge=0.035,
+    ) -> None:
+        floating_contact = copy.deepcopy(_CONTACT_DICT_TEMPLATE)
+        floating_contact["Contact_ID"] = contact_id
+        self.custom_contacts.append(floating_contact)
+        return floating_contact
+
     def generate_floating_contact(
         self,
         contact_id,
