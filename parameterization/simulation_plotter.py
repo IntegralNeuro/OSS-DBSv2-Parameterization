@@ -2,7 +2,7 @@ import numpy as np  # type: ignore
 import argparse
 import pyvista as pv  # type: ignore
 import os
-
+from matplotlib.colors import ListedColormap
 
 class MeshPlotter:
     def __init__(self,
@@ -18,14 +18,16 @@ class MeshPlotter:
                  opacity: float = 1.0,
                  start_invisible: bool = False) -> None:
 
+        # Colormaps for each quantity
+        binary_cmap = ListedColormap(np.array([[0, 0, 0, 0], [0.4, 0.1, 0.7, 0.8]]))
         self.colormaps = {
             "electrode": "cividis",  # Colormap for 'boundaries'
             "material": "tab10",  # Colormap for 'material_real'
             "conductivity": "plasma",  # Colormap for 'conductivity_real'
             "E-field": "Blues_r",  # Colormap for 'E_field_real'
             "potential": "RdBu",  # Colormap for 'potential_real'
-            "Hessian": "PiYG",  # Colormap for 'Hessian'
-            "VTA": "Greens"  # Colormap for 'VTA'
+            # "Hessian": "PiYG",  # Colormap for 'Hessian'
+            "VTA": binary_cmap  # Colormap for 'VTA'
         }
         self.plot_electrode = True
         self.plot_E_field = plot_E_field
@@ -144,7 +146,7 @@ class MeshPlotter:
         if mesh[array_name].ndim == 1:
             mesh_actor = self._add_scalar(mesh, array_name, label)
         elif mesh[array_name].shape[1] == 3:  # Vector mesh
-            mesh_actor = self._add_vector(mesh, array_name, label)
+            mesh_actor = self._add_vector(mesh, array_name, label)            
         self.mesh_actors.append(mesh_actor)
 
     def add_toggle(self, label: str, initial_state: bool = True) -> None:
@@ -209,7 +211,7 @@ class MeshPlotter:
         for filename in vtu_filenames:
             mesh = pv.read(f"{vtu_directory}/{filename}")
             for array_name in mesh.array_names:
-                label = f'{filename.split(".")[0]}'
+                label = array_name
                 if len(self.input_dirs) > 1:
                     if self.grid_plot:
                         label = f'{label}_{self.results_count}'
