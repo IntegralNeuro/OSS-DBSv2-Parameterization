@@ -207,6 +207,8 @@ class BestElectrodeEverModel(ElectrodeModel):
             name = self._boundaries[f"Contact_{index}"]
             print(name)
             contact.bc(name)
+            """
+            # Original code from Konstantin Butenko 
             # Label max z value and min z value for contact_14
             if index == self._parameters._n_contacts or (self._parameters.tip_contact and index == 1):
                 min_edge = get_lowest_edge(contact)
@@ -220,6 +222,22 @@ class BestElectrodeEverModel(ElectrodeModel):
                 for edge in contact.edges:
                     if edge.name is not None:
                         edge.name = name
+            """
+            """
+            # Code copied from other electrode models (e.g., pins_medical.py)
+            min_edge = get_lowest_edge(contact)
+            max_edge = get_highest_edge(contact)
+            # Only name edge with the min and max z values
+            # (represents the edge between the non-contact and contact surface)
+            min_edge.name = name
+            max_edge.name = name
+            """
+            # New code (PNS 2024/07/05) to get proper edge meshes on all 
+            # edges in segmented electrodes (see also boston_scientific_vercise.py)
+            for edge in contact.edges:
+                if edge.name is not None:
+                    edge.name = name
+
         return netgen.occ.Fuse(contacts)
 
     def _contact_directed(self) -> netgen.libngpy._NgOCC.TopoDS_Shape:
