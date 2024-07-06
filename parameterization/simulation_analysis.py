@@ -9,6 +9,41 @@ Some simple tools for analyzing the simulation results.
 """
 
 
+def efield_magnitude(mesh: pv.PolyData) -> pv.PolyData:
+    """
+    Given a mesh of the E-field vector, add a new scalar which is its magnitude
+
+    Args:
+        mesh: contains array 'E_field_real'
+
+    Returns:
+        mesh: with new array 'E_field_mag'
+    """
+    # Get Hessian
+    mesh['E_field_mag'] = np.linalg.norm(mesh['E_field_real'], axis=1)
+    return mesh
+
+
+def update_efield_file(dir: str) -> str:
+    """
+    Given a vtu with the E-field, add a new scalar with the magnitude of the E-field
+    ('E_field_mag') and save the new file.
+
+    Args:
+        dir (str): Directory with an E-field (potiental gradient) vtu filename in it
+
+    Returns:
+        str: The path to the E-field file.
+    """
+    # Get Hessian filename
+    e_field_file = os.path.join(dir, "E-field.vtu")
+    # Load the mesh with E-field data and compute the magnitude
+    mesh_e_field = pv.read(e_field_file)
+    mesh_e_field = efield_magnitude(mesh_e_field)
+    pv.save_meshio(e_field_file, mesh_e_field)
+    return e_field_file
+
+
 def load_vtu(vtu_file: str) -> tuple:
     """
     Load the vtu file and return the scalar values and the points.
@@ -187,13 +222,14 @@ def recursive_dir_list(input_path: str, dir_list: list = []) -> None:
 
 def create_parser() -> argparse.ArgumentParser:
     """
-    Create and return an instance of argparse.ArgumentParser with the necessary arguments.
+    Create and return an instance of argparse. 
     """
-    parser = argparse.ArgumentParser(description="Make Hessian and VTA files from . If none of the `plot_x` flags are set, all plots will be made.")
+    parser = argparse.ArgumentParser(description="Make Hessian and VTA files from. If none (--e_field, --hessian, or --vta are set, all will be done.")
     parser.add_argument("input_path", type=str, help="Path to the vtu file directory or a parent directory")
-    parser.add_argument("-H", "--hessian_only", action="store_true", help="Only the Hessian file will be created")
-    parser.add_argument("-v", "--vta_only", action="store_true", help="Only the VTA file will be created")
-    parser.add_argument("-t", "--threshold", type=float, default=None, help="Threshold value for VTA, if default behavior of computing thresholds for {x, y, z, eval1}")
+    parser.add_argument("-E", "--e_field", action="store_true", help="Update the E-field file")
+    parser.add_argument("-H", "--hessian", action="store_true", help="Create the Hessian file")
+    parser.add_argument("-v", "--vta", action="store_true", help="Create a VTA")
+    parser.add_argument("-t", "--vta_threshold", type=float, default=None, help="Threshold value for VTA, if default behavior of computing thresholds for {x, y, z, eval1}")
     parser.add_argument("-j", "--vta_json", type=str, default=None, help="Path to a json file containing VTA option dictionaries")
     return parser
 
@@ -206,9 +242,6 @@ def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
 
-    if args.hessian_only and args.vta_only:
-        raise ValueError("Only one of --hessian_only and --vta_only can be set.")
-
     # Get the list of directories with E-field files
     dir_list = recursive_dir_list(args.input_path)
 
@@ -219,23 +252,33 @@ def main() -> None:
             with open(args.vta_json, 'r') as f:
                 vta_dict = json.load(f)
         else:
-            vta_dict = {f'VTA(x,{args.threshold})': {'axis': 'x', 'threshold': args.threshold},
-                        f'VTA(y,{args.threshold})': {'axis': 'y', 'threshold': args.threshold},
-                        f'VTA(z,{args.threshold})': {'axis': 'z', 'threshold': args.threshold},
-                        f'VTA(eval1,{args.threshold})': {'eigenvalue': 0, 'threshold': args.threshold}}
+            vta_dict = {f'VTA(x,{args.vta_threshold})': {'axis': 'x', 'threshold': args.vta_threshold},
+                        f'VTA(y,{args.vta_threshold})': {'axis': 'y', 'threshold': args.vta_threshold},
+                        f'VTA(z,{args.vta_threshold})': {'axis': 'z', 'threshold': args.vta_threshold},
+                        f'VTA(eval1,{args.vta_threshold})': {'eigenvalue': 0, 'threshold': args.vta_threshold}}
 
-        if not args.vta_only:
+        if not args.e_field and not args.hessian and not args.vta:
+            args.e_field = True
+            args.hessian = True
+            args.vta = True
+
+        if args.e_field:
+            e_field_file = update_efield_file(dir)
+            print(f"Saved E-field file to {e_field_file}")
+
+        if args.hessian:
             hessian_file = make_hessian_file(dir)
             print(f"Saved Hessian file to {hessian_file}")
 
-        if not args.hessian_only:
-            if args.threshold is None:
+        if args.vta:
+            if args.vta_threshold is None:
                 raise ValueError("A threshold value must be specified to compute VTA.")
             hessian_file = os.path.join(dir, "Hessian.vtu")
             vta_file = make_vta_file(hessian_file, vta_dict)
             print(f"Saved VTA file to {vta_file}")
 
     print("Done!")
+
 
 if __name__ == "__main__":
     main()
