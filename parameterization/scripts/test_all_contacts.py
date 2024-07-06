@@ -51,7 +51,10 @@ def simulate_all_contacts(dir_name, args) -> None:
             electrode.generate_current_contact(contact, 1.0)
             for i in range(n_contacts):
                 if not (i + 1) == contact:
-                    electrode.generate_unused_contact(i + 1, 1.0)
+                    if args.floating_contacts:
+                        electrode.generate_floating_contact(i + 1)
+                    else:
+                        electrode.generate_unused_contact(i + 1)
             electrode.update_parameters()
             electrode.modify_json_parameters()
             electrode.run_ossdbs()
@@ -142,6 +145,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument('-p', '--n_segments_per_level', type=int, default=2, help="Number of segments per level.")
     parser.add_argument('-v', '--levels', type=int, default=3, help="Number of levels.")
     parser.add_argument('-r', '--contact_ratio', type=float, default=0.9, help="Ratio of total contact length to segment circumference.")
+    parser.add_argument('-f', '--floating_contacts', action='store_true', help="Make non-stim contacts floating, as opposed to unused.")
     return parser.parse_args()
 
 
