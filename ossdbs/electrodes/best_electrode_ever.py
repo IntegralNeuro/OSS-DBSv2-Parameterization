@@ -92,11 +92,37 @@ class BestElectrodeEverModel(ElectrodeModel):
         return encapsulation.Move(v=self._position) - self.geometry
 
     def _construct_geometry(self) -> netgen.libngpy._NgOCC.TopoDS_Shape:
+        self._origin = (0, 0, 0)
         contacts = self._contacts()
         # TODO check
-        electrode = occ.Glue([self.__body() - contacts, contacts])
-        axis = occ.Axis(p=(0, 0, 0), d=self._direction)
+        body = self.__body() - contacts
+        """
+        for edge in contacts.edges:
+            if edge.name is not None:
+                print(f'CC {edge.name} ',
+                      f'({self._radial_distance(edge.center):0.4f}, '
+                      f'{np.arctan2(edge.center.y, edge.center.x) * 180 / np.pi:0.4f}, ',
+                      f'{edge.center.z:0.4f})')
+
+        for edge in body.edges:
+            if edge.name is not None:
+                print(f'BB {edge.name} ',
+                      f'({self._radial_distance(edge.center):0.4f}, '
+                      f'{np.arctan2(edge.center.y, edge.center.x) * 180 / np.pi:0.4f}, ',
+                      f'{edge.center.z:0.4f})')
+        """
+        electrode = occ.Glue([body, contacts])
+        """
+        for edge in electrode.edges:
+            if edge.name is not None:
+                print(f'EE {edge.name} ',
+                      f'({self._radial_distance(edge.center):0.4f}, '
+                      f'{np.arctan2(edge.center.y, edge.center.x) * 180 / np.pi:0.4f}, ',
+                      f'{edge.center.z:0.4f})')
+        """
+        axis = occ.Axis(p=self._origin, d=self._direction)
         rotated_electrode = electrode.Rotate(axis=axis, ang=self._rotation)
+
         return rotated_electrode.Move(v=self._position)
 
     def __body(self) -> netgen.libngpy._NgOCC.TopoDS_Shape:
@@ -120,7 +146,7 @@ class BestElectrodeEverModel(ElectrodeModel):
     def _contacts(self) -> netgen.libngpy._NgOCC.TopoDS_Shape:
 
         # compute total number of contacts
-        #self._n_contacts = self._parameters.n_segments_per_level * self._parameters.segmented_levels + (self._parameters.levels - self._parameters.segmented_levels)
+        # self._n_contacts = self._parameters.n_segments_per_level * self._parameters.segmented_levels + (self._parameters.levels - self._parameters.segmented_levels)
         if 1 in self._parameters.segmented_levels and self._parameters.tip_contact:
             print("Tip contact cannot be segmented!")
             raise SystemExit
@@ -143,13 +169,10 @@ class BestElectrodeEverModel(ElectrodeModel):
             distance += (
                 self._parameters.contact_length + self._parameters.contact_spacing
             )
-
-
         radius = self._parameters.lead_diameter * 0.5
         direction = self._direction
-        point = (0, 0, 0)
         height = self._parameters.contact_length
-        axis = occ.Axis(p=point, d=self._direction)
+        axis = occ.Axis(p=self._origin, d=self._direction)
 
         center = tuple(np.array(direction) * radius)
         # define half space at tip_center
@@ -160,132 +183,112 @@ class BestElectrodeEverModel(ElectrodeModel):
             h_pt2 = self._parameters.tip_length - radius
             contact_pt2 = occ.Cylinder(p=center, d=direction, r=radius, h=h_pt2)
             contact_1 = contact_tip + contact_pt2
-            #contact_last = occ.Cylinder(p=point, d=self._direction, r=radius, h=height)
 
-            ## dumb way
-            #variable_name = "contact_" + str(_n_contacts)
-            #exec(f"{variable_name} = {occ.Cylinder(p=point, d=self._direction, r=radius, h=height)}")
-
-        contact = occ.Cylinder(p=point, d=self._direction, r=radius, h=height)
-
+        contact = occ.Cylinder(p=self._origin, d=self._direction, r=radius, h=height)
         contact_directed = self._contact_directed()
 
         contacts = []
-
-        # # first level explicitly
-        # if self._parameters.tip_contact:
-        #     if 0 in self._parameters.segmented_levels:
-        #         print("tip contacts cannot be segmented!")
-        #         raise SystemExit
-        #     else:
-        #         contacts.append(contact_1)
-        # else:
-        #     if 0 in self._parameters.segmented_levels:
-        #         contacts.append(contact_directed.Move(v=vectors[0]))
-        #         intersegment_angle =  360.0 / self._parameters.n_segments_per_level
-        #         for segment_i in range(1, self._parameters.n_segments_per_level):
-        #             contacts.append(contact_directed.Rotate(axis, intersegment_angle * segment_i).Move(v=vectors[0]))
-        #     else:
-        #         contacts.append(contact.Move(v=vectors[0]))
-
-        for level_i in range(0,N_steps):
-
-            if level_i+1 in self._parameters.segmented_levels:
-                contacts.append(contact_directed.Move(v=vectors[level_i]))
+        segmented_indices = []
+        for level_i in range(0, N_steps):
+            if level_i + 1 in self._parameters.segmented_levels:
                 intersegment_angle =  360.0 / self._parameters.n_segments_per_level
-                for segment_i in range(1, self._parameters.n_segments_per_level):
-                    contacts.append(contact_directed.Rotate(axis, intersegment_angle * segment_i).Move(v=vectors[level_i]))
+                for segment_i in range(0, self._parameters.n_segments_per_level):
+                    if segment_i == 0:
+                        c = contact_directed.Move(v=vectors[level_i])
+                    else:
+                        c = contact_directed.Rotate(axis,intersegment_angle * segment_i).Move(v=vectors[level_i])
+                    segmented_indices.append(len(contacts) + 1)
+                    contacts.append(c)
             else:
                 if level_i == 0 and self._parameters.tip_contact:
                     contacts.append(contact_1)
                 else:
                     contacts.append(contact.Move(v=vectors[level_i]))
 
-        print(contacts)
-
         for index, contact in enumerate(contacts, 1):
-            name = self._boundaries[f"Contact_{index}"]
-            print(name)
-            contact.bc(name)
-            """
-            # Original code from Konstantin Butenko 
-            # Label max z value and min z value for contact_14
-            if index == self._parameters._n_contacts or (self._parameters.tip_contact and index == 1):
-                min_edge = get_lowest_edge(contact)
-                min_edge.name = name
-            # Only label contact edge with maximum z value for contact_1
-            if index == 1 or index == self._parameters._n_contacts:
-                max_edge = get_highest_edge(contact)
-                max_edge.name = name
+            if index in segmented_indices:
+                self._label_directed_contact(contact, f"Contact_{index}")
             else:
-                # Label all the named contacts appropriately
-                for edge in contact.edges:
-                    if edge.name is not None:
-                        edge.name = name
+                self._label_cylinder_contact(contact, f"Contact_{index}")
+            """ Diagnostic to understand/refine geometry setting
+            self._print_contact(contact)
             """
-            """
-            # Code copied from other electrode models (e.g., pins_medical.py)
-            min_edge = get_lowest_edge(contact)
-            max_edge = get_highest_edge(contact)
-            # Only name edge with the min and max z values
-            # (represents the edge between the non-contact and contact surface)
-            min_edge.name = name
-            max_edge.name = name
-            """
-            # New code (PNS 2024/07/05) to get proper edge meshes on all 
-            # edges in segmented electrodes (see also boston_scientific_vercise.py)
-            for edge in contact.edges:
-                if edge.name is not None:
-                    edge.name = name
 
         return netgen.occ.Fuse(contacts)
 
+    def _radial_distance(self, center):
+        # Calculate the radial distance between from a point
+        # to the center of the electrode
+        # center: center of face or edge [occ.point]
+        # return: float
+        d_vec = np.array([center.x - self._origin[0], center.y - self._origin[1], center.z - self._origin[2]])
+        a_vec = np.array(self._direction)
+        return np.linalg.norm(np.cross(d_vec, a_vec))
+
+    def _label_cylinder_contact(self, contact, name):
+        contact.name = name
+        # find active face: the one with 4 faces
+        for face in contact.faces:
+            if len(face.edges) == 4:
+                active_face = face
+                break
+        # Label active face and its edges
+        active_face.name = name
+        for edge in active_face.edges:
+            r = self._radial_distance(edge.center)
+            if np.isclose(r, 0):
+                edge.name = name
+
+    def _label_directed_contact(self, contact, name):
+        contact.name = name
+        # find active face, the one whosse center is farthest from electrode center
+        max_r = 0
+        for face in contact.faces:
+            r = self._radial_distance(face.center)
+            if r > max_r:
+                max_r = r
+                active_face = face
+        # Label active face and its edges
+        active_face.name = name
+        for edge in active_face.edges:
+            """ Diagnostic to understand missing edge meshes
+            if not np.isclose(self._radial_distance(edge.center), 0.65):
+                edge.name = name
+            """
+            edge.name = name
+
+    def _print_contact(self, contact):
+        print(f'\nCONTACT {contact.name}\n')
+        for i, f in enumerate(contact.faces):
+            print(f'Face_{i}: {str(f.name):12}',
+                  f'rad={self._radial_distance(f.center):0.4f}\t',
+                  f'ang={np.arctan2(f.center.y, f.center.x) * 180 / np.pi:0.4f}\t',
+                  f'z={f.center.z:0.4f}')
+            for j, e in enumerate(f.edges):
+                print(f'edge_{j}: {str(e.name):12}',
+                      f'rad={self._radial_distance(e.center):0.4f}\t',
+                      f'ang={np.arctan2(e.center.y, e.center.x) * 180 / np.pi:0.4f}\t',
+                      f'z={e.center.z:0.4f}')
+            print('')
+
     def _contact_directed(self) -> netgen.libngpy._NgOCC.TopoDS_Shape:
-        point = (0, 0, 0)
         radius = self._parameters.lead_diameter * 0.5
+        """ Diagnostic to understand missing edge meshes
+        radius += 0.5
+        """
         height = self._parameters.contact_length
-        body = occ.Cylinder(p=point, d=self._direction, r=radius, h=height)
+        body = occ.Cylinder(p=self._origin, d=self._direction, r=radius, h=height)
         # tilted y-vector marker is in YZ-plane and orthogonal to _direction
         new_direction = (0, self._direction[2], -self._direction[1])
-        eraser = occ.HalfSpace(p=point, n=new_direction)
+        eraser = occ.HalfSpace(p=self._origin, n=new_direction)
         angle = 90 - self._parameters.segment_contact_angle / 2
-        axis = occ.Axis(p=point, d=self._direction)
+        axis = occ.Axis(p=self._origin, d=self._direction)
 
         contact = body - eraser.Rotate(axis, angle) - eraser.Rotate(axis, -angle)
-        # Centering contact to label edges
-        contact = contact.Rotate(axis, angle)
-        # TODO refactor / wrap in function
-        # Find  max z, min z, max x, and max y values and label min x and min y edge
-        max_z_val = max_y_val = max_x_val = float("-inf")
-        min_z_val = float("inf")
-        for edge in contact.edges:
-            if edge.center.z > max_z_val:
-                max_z_val = edge.center.z
-            if edge.center.z < min_z_val:
-                min_z_val = edge.center.z
-            if edge.center.x > max_x_val:
-                max_x_val = edge.center.x
-                max_x_edge = edge
-            if edge.center.y > max_y_val:
-                max_y_val = edge.center.y
-                max_y_edge = edge
-        max_x_edge.name = "max x"
-        max_y_edge.name = "max y"
-        # Label only the outer edges of the contact with min z and max z values
-        for edge in contact.edges:
-            if np.isclose(edge.center.z, max_z_val) and not (
-                np.isclose(edge.center.x, radius / 2)
-                or np.isclose(edge.center.y, radius / 2)
-            ):
-                edge.name = "max z"
-            elif np.isclose(edge.center.z, min_z_val) and not (
-                np.isclose(edge.center.x, radius / 2)
-                or np.isclose(edge.center.y, radius / 2)
-            ):
-                edge.name = "min z"
 
-        # TODO check that the starting axis of the contacts
-        # are correct according to the documentation
-        contact = contact.Rotate(axis, -angle)
-
-        return contact
+        # Having trouble with body-seam lying inside contacts
+        # Going to try placing the first contact's gap at the origin (+x axis)
+        contact_angle = np.arctan2(contact.center.y, contact.center.x) * 180 / np.pi
+        gap_angle = 360 / self._parameters.n_segments_per_level - self._parameters.segment_contact_angle
+        rotation_angle = (gap_angle + self._parameters.segment_contact_angle) / 2 - contact_angle
+        return contact.Rotate(axis, rotation_angle)
