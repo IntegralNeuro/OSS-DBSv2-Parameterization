@@ -92,7 +92,7 @@ class CustomElectrodeModeler:
         data = OmegaConf.to_container(cfg.ossdbs_input_json, resolve=True)
         return data
 
-    def generate_output_path(self, custom_outputpath=None) -> None:
+    def generate_output_path(self, custom_outputpath=None, results_dir="results") -> None:
         """
         Generates the output path for the JSON file.
 
@@ -101,10 +101,10 @@ class CustomElectrodeModeler:
         """
         now = datetime.now().strftime("%Y%m%d_%H%M%S")
         if custom_outputpath:
-            self.input_dict["OutputPath"] = f"results/{custom_outputpath}_{now}"
+            self.input_dict["OutputPath"] = f"{results_dir}/{custom_outputpath}_{now}"
         else:
             self.input_dict["OutputPath"] = (
-                f"results/{self.input_dict['OutputPath']}_{now}"
+                f"{results_dir}/{self.input_dict['OutputPath']}_{now}"
             )
         self.output_path = self.input_dict["OutputPath"]
         os.makedirs(self.output_path, exist_ok=True)
