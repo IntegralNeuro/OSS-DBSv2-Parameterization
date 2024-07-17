@@ -207,7 +207,9 @@ def make_vta_file(hessian_vtu: str, vta_dict: dict) -> str:
     return vta_file
 
 
-def recursive_dir_list(input_path: str, dir_list: list = []) -> None:
+def recursive_dir_list(input_path: str, dir_list: list = None) -> None:
+    if dir_list is None:
+        dir_list = []
     contents = os.listdir(input_path)
     if "E-field.vtu" in contents:
         dir_list.append(input_path)
