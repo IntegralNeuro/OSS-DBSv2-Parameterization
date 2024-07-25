@@ -3,48 +3,7 @@ from json_modification_api import CustomElectrodeModeler
 import simulation_analysis as sa
 from matplotlib import pyplot as plt
 import pickle
-
-
-def main() -> None:
-    """
-    This is the main function of the program.
-    It creates an instance of CustomElectrodeModeler and performs the necessary operations.
-    """
-    args = parse_args()
-
-    # if running all, don't block on the first ones
-    block = not args.experiment_name == "all"
-
-    if args.experiment_name == "all" or args.experiment_name == "current_controlled":
-        test_current_controlled(block=block, rerun=not args.no_rerun)
-    if args.experiment_name == "all" or args.experiment_name == "linearity_monopolar":
-        test_linearity_monopolar(block=block, rerun=not args.no_rerun)
-    if args.experiment_name == "all" or args.experiment_name == "linearity_bipolar":
-        test_linearity_bipolar(block=block, rerun=not args.no_rerun)
-    if args.experiment_name == "all" or args.experiment_name == "linearity_multipolar":
-        test_linearity_multipolar(rerun=not args.no_rerun)
-
-
-def parse_args() -> argparse.Namespace:
-    """
-    This function parses the command line arguments.
-
-    Returns:
-        argparse.Namespace: The parsed arguments.
-    """
-    parser = argparse.ArgumentParser(description="Model electrodes for OSS-DBS.")
-    parser.add_argument(
-        "--experiment_name",
-        "-e",
-        type=str,
-        default="all",
-        help="Name of the experiment.",
-    )
-    parser.add_argument(
-        '--no_rerun', '-n', action='store_true',
-        help="Don't Rerun the simulation, just plot the results."
-    )
-    return parser.parse_args()
+import numpy as np
 
 
 def test_current_controlled(rerun=True, block=True) -> None:
@@ -290,7 +249,7 @@ def test_linearity_bipolar(rerun=True, block=True) -> None:
     """
 
 
-def test_linearity_multipolar(rerun=True, block=True) -> None:
+def test_linearity_multipolar(args, rerun=True, block=True) -> None:
     """
     Is multipolar stimulation linear?
     """
@@ -336,12 +295,19 @@ def test_linearity_multipolar(rerun=True, block=True) -> None:
                     contact_id = expt['contacts'].index(i + 1)
                     if expt['stim_mode'] == "current":
                         electrode.generate_current_contact(
-                            i + 1, expt['current'][contact_id])
+                            i + 1, expt['current'][contact_id],
+                            max_mesh_size=args.max_mesh_size,
+                            max_mesh_size_edge=args.max_mesh_size_edge)
                     else:
                         electrode.generate_voltage_contact(
-                            i + 1, expt['voltage'][contact_id])
+                            i + 1, expt['voltage'][contact_id],
+                            max_mesh_size=args.max_mesh_size,
+                            max_mesh_size_edge=args.max_mesh_size_edge)
                 else:
-                    electrode.generate_floating_contact(i + 1)
+                    electrode.generate_floating_contact(
+                        i + 1,
+                        max_mesh_size=args.max_mesh_size,
+                        max_mesh_size_edge=args.max_mesh_size_edge)
             electrode.update_parameters()
             electrode.modify_json_parameters()
             electrode.run_ossdbs()
@@ -373,6 +339,99 @@ def test_linearity_multipolar(rerun=True, block=True) -> None:
     plt.show(block=block)
 
     return experiment_list
+
+
+def test_linearity_scale(block=True) -> None:
+    """
+    Is monopolar stimulation linear?
+    """
+    dir_name = "experiment_linear_scale"
+    electrode = CustomElectrodeModeler("ossdbs_input_config")
+    electrode.modify_electrode_custom_parameters(
+        total_length=300.0,
+        segment_contact_angle=60.0,
+        n_segments_per_level=1,
+        levels=3,
+        segmented_levels=[],
+        tip_contact=False,
+    )
+    # Test whether linearity holds for monopolar stimulations
+    values = []
+    contact = 1
+    current_list = [0.001, 0.01, 0.1, 1]
+
+    stim_mode = "current"
+    for current in current_list:
+        electrode.generate_output_path(f"{dir_name}/tmp")
+        for i in range(electrode.get_electrode_custom_parameters()["_n_contacts"]):
+            if (i + 1) == contact:
+                if stim_mode == "current":
+                    electrode.generate_current_contact(i + 1, current)
+                else:
+                    electrode.generate_voltage_contact(i + 1, current)
+            else:
+                electrode.generate_floating_contact(i + 1)
+        electrode.update_parameters()
+        electrode.modify_json_parameters()
+        electrode.run_ossdbs()
+        pts, v, n = sa.load_vtu(electrode.output_path + '/potential.vtu')
+        values.extend(v)
+
+    plt.figure(figsize=[15, 5])
+    # compare linearity
+    ct = 0
+    for i in range(4):
+        for j in range(i + 1, 4):
+            ct += 1
+            plt.subplot(3, 2, ct)
+            plt.plot(values[i], values[j], 'b.')
+            xlim = np.array(plt.xlim())
+            plt.plot(xlim, xlim * current_list[j] / current_list[i], 'k-')
+            plt.xlabel(f'V(c = {current_list[i]})')
+            plt.ylabel(f'V(c = {current_list[j]})')
+    plt.suptitle('Linearity in scale of current stim')
+    plt.show(block=block)
+
+    """
+    Linearity holds for both current and voltage stimulation!
+    """
+
+
+def main() -> None:
+    """
+    This is the main function of the program.
+    It creates an instance of CustomElectrodeModeler and performs the necessary operations.
+    """
+    args = parse_args()
+
+    # if running all, don't block on the first ones
+    block = not args.experiment_name == "all"
+
+    if args.experiment_name == "all" or args.experiment_name == "current_controlled":
+        test_current_controlled(block=block, rerun=not args.no_rerun)
+    if args.experiment_name == "all" or args.experiment_name == "linearity_monopolar":
+        test_linearity_monopolar(block=block, rerun=not args.no_rerun)
+    if args.experiment_name == "all" or args.experiment_name == "linearity_bipolar":
+        test_linearity_bipolar(block=block, rerun=not args.no_rerun)
+    if args.experiment_name == "all" or args.experiment_name == "linearity_multipolar":
+        test_linearity_multipolar(args, rerun=not args.no_rerun)
+    if args.experiment_name == "all" or args.experiment_name == "linearity_scale":
+        test_linearity_scale(block=block)
+
+
+def parse_args() -> argparse.Namespace:
+    """
+    This function parses the command line arguments.
+
+    Returns:
+        argparse.Namespace: The parsed arguments.
+    """
+    parser = argparse.ArgumentParser(description="Model electrodes for OSS-DBS.")
+    parser.add_argument("--experiment_name", "-e", type=str, default="all", help="Name of the experiment.",)
+    parser.add_argument('--no_rerun', '-n', action='store_true', help="Don't Rerun the simulation, just plot the results.")
+    parser.add_argument('-M', '--max_mesh_size', type=float, default=0.5, help="Max mesh size.")
+    parser.add_argument('-E', '--max_mesh_size_edge', type=float, default=0.35, help="Max edge mesh size.")
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
