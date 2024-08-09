@@ -35,13 +35,19 @@ def update_efield_file(dir: str) -> str:
     Returns:
         str: The path to the E-field file.
     """
-    # Get Hessian filename
-    e_field_file = os.path.join(dir, "E-field.vtu")
-    # Load the mesh with E-field data and compute the magnitude
-    mesh_e_field = pv.read(e_field_file)
-    mesh_e_field = efield_magnitude(mesh_e_field)
-    pv.save_meshio(e_field_file, mesh_e_field)
-    return e_field_file
+    # Get E-field filenames
+    e_field_files = ["E-field.vtu", "grid.vtk"]
+    updated_files = []
+    for file in e_field_files:
+        filepath = os.path.join(dir, file)
+        if not os.path.exists(filepath):
+            continue
+        # Load the mesh with E-field data and compute the magnitude
+        mesh_e_field = pv.read(filepath)
+        mesh_e_field = efield_magnitude(mesh_e_field)
+        pv.save_meshio(filepath, mesh_e_field)
+        updated_files.append(filepath)
+    return updated_files
 
 
 def load_vtu(vtu_file: str) -> tuple:
@@ -79,9 +85,13 @@ def hessian_mesh_from_efield(mesh: pv.PolyData) -> pv.PolyData:
                                  in descending order
     """
     # Get Hessian
-    mesh = mesh.compute_derivative(scalars='E_field_real', gradient=True)
-    hessian = pv.UnstructuredGrid(mesh.cells, mesh.celltypes, mesh.points)
-    hessian['Hessian'] = mesh['gradient']
+    mesh = mesh.compute_derivative(scalars='E_field_real', gradient='Hessian')
+    # Convert to unstructured grid or leae as structured grid
+    if type(mesh)==pv.PolyData:
+        hessian = pv.UnstructuredGrid(mesh.cells, mesh.celltypes, mesh.points)
+        hessian['Hessian'] = mesh['Hessian']
+    elif type(mesh)==pv.StructuredGrid:
+        hessian = mesh
     # Compute eigenvalues
     evals = np.linalg.eigvals(np.array(hessian['Hessian'].reshape(hessian.n_points, 3, 3)))
     evals = np.real(evals)  # take absolute value of eigenvalues
@@ -265,8 +275,8 @@ def main() -> None:
             args.vta = True
 
         if args.e_field:
-            e_field_file = update_efield_file(dir)
-            print(f"Saved E-field file to {e_field_file}")
+            e_field_files = update_efield_file(dir)
+            print(f"Updated E-field files {e_field_files}")
 
         if args.hessian:
             hessian_file = make_hessian_file(dir)
