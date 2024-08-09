@@ -105,6 +105,7 @@ class Settings:
         "ExportVTK": False,
         "ExportFrequency": None,
         "ExportElectrode": False,
+        "CustomExportVTK": None,
         "ModelSide": 0,
         "CalcAxonActivation": False,
         "ActivationThresholdVTA": None,
