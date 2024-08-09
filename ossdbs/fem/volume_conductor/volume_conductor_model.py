@@ -122,6 +122,7 @@ class VolumeConductor(ABC):
         out_of_core: bool = False,
         export_frequency: Optional[float] = None,
         adaptive_mesh_refinement: bool = False,
+        custom_vtk: str = None,
     ) -> dict:
         """Run volume conductor model at all frequencies.
 
@@ -144,6 +145,8 @@ class VolumeConductor(ABC):
             Frequency-domain representation of stimulation signal
         adaptive_mesh_refinement: bool
             Perform adaptive mesh refinement (only at first frequency)
+        custom_vtk: str
+            Optional VTK filename/path for custom grid export
 
         Notes
         -----
@@ -313,6 +316,14 @@ class VolumeConductor(ABC):
                 time_1 = time.time()
                 timings["FieldExport"] = time_1 - time_0
                 time_0 = time_1
+
+                # export grid data as a vtk
+                if custom_vtk is not None:
+                    _logger.info(f"Exporting Custom VTK Grid")
+                    self.export_custom_vtk(custom_vtk)
+                    time_1 = time.time()
+                    timings["CustomGridExport"] = time_1 - time_0
+                    time_0 = time_1
 
         # save impedance at all frequencies to file!
         if compute_impedance:
@@ -690,6 +701,17 @@ class VolumeConductor(ABC):
             ngmesh,
             False,
         ).save(os.path.join(self.output_path, "material"))
+
+    def export_custom_vtk(self, custom_vtk):
+        """Append potential and field data to custom VTK file."""
+        import pyvista as pv
+        grid = pv.read(custom_vtk)
+        mesh_points = self.mesh.ngsolvemesh(grid.points[:, 0],
+                                            grid.points[:, 1],
+                                            grid.points[:, 2])
+        grid["potential_real"] = self.potential(mesh_points)
+        grid["E_field_real"] = self.electric_field(mesh_points)
+        grid.save(custom_vtk)
 
     def floating_values(self) -> dict:
         """Read out floating potentials."""

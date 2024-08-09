@@ -8,6 +8,7 @@ from datetime import datetime
 import pyvista as pv  # type: ignore
 from hydra import compose, initialize  # type: ignore
 from omegaconf import OmegaConf  # type: ignore
+import numpy as np
 
 # Default contacts are neither floating or active, and hence "unused"
 _CONTACT_DICT_TEMPLATE = {
@@ -79,6 +80,9 @@ class CustomElectrodeModeler:
         total_current_a = -total_current_a
         self.modify_surface_parameters(name="BrainSurface", current_a=total_current_a)
         self.custom_contacts = []
+        # output mesh
+        if "CustomExport" in self.input_dict:
+            self.save_export_mesh()
 
     def generate_input_dictionary_template(self) -> dict:
         """
@@ -368,7 +372,7 @@ class CustomElectrodeModeler:
         self.plotter.title = title
         self.plotter.add_text(title, position="upper_left", color="white", font_size=16)
         return points_actor
-    
+
     def plot_electrode(self, output_path=None) -> None:
         if output_path:
             self.output_path = output_path
@@ -379,6 +383,86 @@ class CustomElectrodeModeler:
     def toggle_visibility(self, flag, index):
         self.meshes[index].SetVisibility(flag)
         self.plotter.render()
+
+    def save_export_mesh(self):
+        if "CustomExportVTK" not in self.input_dict:
+            return None
+        if self.input_dict["CustomExportVTK"] is None:
+            return None
+        if "CustomExport" not in self.input_dict:
+            return None
+        rmin = self.input_dict["CustomExport"]["RMin"]
+        rmax = self.input_dict["CustomExport"]["RMax"]
+        rpts = self.input_dict["CustomExport"]["RPts"]
+        zmin = self.input_dict["CustomExport"]["ZMin"]
+        zmax = self.input_dict["CustomExport"]["ZMax"]
+        zpts = self.input_dict["CustomExport"]["ZPts"]
+        phipts = self.input_dict["CustomExport"]["PhiPts"]
+
+        # Make a cylinder mesh - structured grid
+        d_ang = 360 / phipts
+        alist = np.linspace(-180, 180 - d_ang, phipts)
+        if 'RPower' in self.input_dict["CustomExport"]:
+            pow = self.input_dict["CustomExport"]["RPower"]
+            rlist = np.linspace(np.power(rmin, 1/pow),
+                                np.power(rmax, 1/pow), rpts)**pow
+        else:
+            rlist = 10**np.linspace(np.log10(rmin), np.log10(rmax), rpts)
+        zlist = np.linspace(zmin, zmax, zpts)
+        rg, ag, zg = np.meshgrid(rlist, alist, zlist, indexing='ij')
+        xg = rg * np.cos(ag * np.pi/180)
+        yg = rg * np.sin(ag * np.pi/180)
+        cylinder = pv.StructuredGrid(xg, yg, zg)
+
+        """
+        #   There are much simpler ways to make the points
+        #   for a cylinder, but not (AFAIK) that makes a
+        #   a mesh with all internal cells defined - handy for making
+        #   threshold surfaces and volumes.
+
+        # Make a wedge from an 8-point boxes
+        d_phi = 360 / phipts
+        d_z = (zmax - zmin) / (zpts - 1)
+        rlist = 10**np.linspace(np.log10(rmin), np.log10(rmax), rpts)
+        boxes = []
+        for ir in range(len(rlist) - 1):
+            alist = [0, d_phi]
+            zlist = [0, d_z]
+            gr, ga, gz = np.meshgrid(rlist[ir:(ir+2)], alist, zlist, indexing='ij')
+            gx = gr * np.cos(ga * np.pi / 180)
+            gy = gr * np.sin(ga * np.pi / 180)
+            box = pv.StructuredGrid(gx, gy, gz)
+            # if finer, triangulated cells are wanted (much larger file size)
+            # box = box.delaunay_3d()
+            boxes.append(box)
+        wedge = pv.merge(boxes, merge_points=False)
+        wedge = wedge.clean(tolerance=1e-5, produce_merge_map=False)
+        # Make a two-layer disk from wedges
+        wedges = []
+        for ia in range(phipts):
+            wedges.append(wedge.rotate_z(ia * d_phi))
+        disk = pv.merge(wedges, merge_points=False)
+        disk = disk.clean(tolerance=1e-5, produce_merge_map=False)
+        # Make a cylinder from disks
+        disks = []
+        for iz in range(zpts - 1):
+            disks.append(disk.translate([0, 0, zmin + iz * d_z]))
+        cylinder = pv.merge(disks, merge_points=False)
+        cylinder = cylinder.clean(tolerance=1e-5, produce_merge_map=False)
+        """
+
+        # Finally move to the electrode tip
+        tipx = self.input_dict['Electrodes'][0]['TipPosition']['x[mm]']
+        tipy = self.input_dict['Electrodes'][0]['TipPosition']['y[mm]']
+        tipz = self.input_dict['Electrodes'][0]['TipPosition']['z[mm]']
+        cylinder = cylinder.translate([tipx, tipy, tipz])
+
+        # Save the cylinder mesh to the output path and add
+        # the pathname to the dictionary
+        filepath = os.path.join(self.output_path,
+                                self.input_dict["CustomExportVTK"])
+        cylinder.save(filepath)
+        self.input_dict["CustomExportVTK"] = filepath
 
 
 def main() -> None:

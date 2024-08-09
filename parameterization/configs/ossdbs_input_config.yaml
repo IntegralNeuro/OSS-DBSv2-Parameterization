@@ -23,7 +23,7 @@ ossdbs_input_json:
           segmented_levels: [1, 3]
           tip_contact: false
           _n_contacts: 10                # }
-        "Rotation[Degrees]": -10.0
+        "Rotation[Degrees]": 0.0
         Direction:
           "x[mm]": 0.0
           "y[mm]": 0.0
@@ -233,3 +233,13 @@ ossdbs_input_json:
       Active: false
       StimSetsFile: "Current_protocols_0.csv"
     PathwayFile: "Allocated_axons_parameters.json"
+    CustomExportVTK: 'grid.vtk'
+    CustomExport:
+      RMin: 0.65
+      RMax: 4
+      RPts: 90
+      RPower: 3 # linear spacing the power-th root: 1 is linear, big approaches log-spacing
+      ZMin: 2
+      ZMax: 10
+      ZPts: 200
+      PhiPts: 360

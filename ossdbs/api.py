@@ -444,6 +444,7 @@ def run_volume_conductor_model(settings, volume_conductor, frequency_domain_sign
         out_of_core=out_of_core,
         export_frequency=export_frequency,
         adaptive_mesh_refinement=settings["AdaptiveMeshRefinement"],
+        custom_vtk=custom_export_file(settings)
     )
     return vcm_timings
 
@@ -608,3 +609,10 @@ def run_PAM(settings):
             scaling=settings["Scaling"],
             scaling_index=settings["ScalingIndex"],
         )
+
+
+def custom_export_file(settings):
+    """Create a 3D mesh in cylindrical coords from the VTKGrid settings (PNS)."""
+    if "CustomExportVTK" not in settings:
+        return None
+    return settings["CustomExportVTK"]

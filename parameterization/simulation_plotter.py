@@ -13,7 +13,6 @@ class MeshPlotter:
                  plot_material: bool = False,
                  plot_conductivity: bool = False,
                  plot_potential: bool = False,
-                 plot_Hessian: bool = False,
                  plot_VTA: bool = False,
                  threshold_array_name=None,
                  threshold_component=None,
@@ -21,20 +20,21 @@ class MeshPlotter:
                  e_field_scale: float = 1,
                  jitter_std: float = 0.0,
                  opacity: float = 1.0,
-                 start_invisible: bool = False) -> None:
+                 start_invisible: bool = False,
+                 filenames: str | list[str] = None) -> None:
 
         # Colormaps for each quantity
         # binary_cmap = ListedColormap(np.array([[0, 0, 0, 0], [0.4, 0.1, 0.7, 0.8]]))
         binary_cmap = ListedColormap(np.array([[0, 0, 0, 0], [0.7, 0.3, 1, 0.05]]))
         self.colormaps = {
-            "electrode": "cividis",  # Colormap for 'boundaries'
+            "boundaries": "cividis",  # Colormap for 'boundaries'
             "material": "tab10",  # Colormap for 'material_real'
             "conductivity": "plasma",  # Colormap for 'conductivity_real'
-            "E-field": "Oranges",  # Colormap for 'E_field_real'
-            "potential": "RdBu",  # Colormap for 'potential_real'
-            # "Hessian": "PiYG",  # Colormap for 'Hessian'
+            "E_field_mag": "Oranges",  # Colormap for 'E_field_real'
+            "E_field_real": "Black",  # Colormap for 'E_field_real'
+            "potential_real": "RdBu",  # Colormap for 'potential_real'
             "VTA": binary_cmap,  # Colormap for 'VTA'
-            "threshold": [0.7, 0.1, 1.0, 0.02]
+            "threshold": [0.7, 0.1, 1.0, 0.4]
         }
         self.plot_electrode = True
         self.plot_E_field_vec = plot_E_field_vec
@@ -42,8 +42,31 @@ class MeshPlotter:
         self.plot_material = plot_material
         self.plot_conductivity = plot_conductivity
         self.plot_potential = plot_potential
-        self.plot_Hessian = plot_Hessian
         self.plot_VTA = plot_VTA
+
+        # Hand code this for now
+        self.load_dict = {
+            'electrode': self.plot_electrode,
+            'material': self.plot_material,
+            'conductivity': self.plot_conductivity,
+            'E-field': self.plot_E_field_mag or self.plot_E_field_vec,
+            'potential': self.plot_potential,
+            'VTA': self.plot_VTA
+        }
+        self.plot_dict = {
+            'boundaries': self.plot_electrode,
+            'material': self.plot_material,
+            'conductivity': self.plot_conductivity,
+            'E_field_mag': self.plot_E_field_mag,
+            'E_field_real': self.plot_E_field_vec,
+            'potential_real': self.plot_potential,
+            'VTA': self.plot_VTA
+        }
+
+        if isinstance(filenames, str):
+            self.input_filenames = [filenames]
+        else:
+            self.input_filenames = filenames
 
         self.threshold_array_name = threshold_array_name
         self.threshold_component = threshold_component
@@ -114,6 +137,7 @@ class MeshPlotter:
                 "style": "points",
                 "show_edges": True,
                 "cmap": self._get_colormap(array_name),
+                "opacity": self.opacity,
                 "scalar_bar_args": {
                     "title": label,
                     "title_font_size": 20,
@@ -131,7 +155,6 @@ class MeshPlotter:
             mesh,
             name=label,
             scalars=mesh[array_name],
-            opacity=self.opacity,
             **kwargs
         )
         if not is_electrode:
@@ -163,23 +186,21 @@ class MeshPlotter:
                  label: str = None) -> None:
         # Type specific kwargs
         label = label if label else array_name
-        
+
         mesh_actor = None
         if mesh[array_name].ndim == 1:
-            if ("E_field" not in array_name) or (self.plot_E_field_mag):
-                mesh_actor = self._add_scalar(mesh, array_name, label)
+            mesh_actor = self._add_scalar(mesh, array_name, label)
         elif mesh[array_name].shape[1] == 3:  # Vector mesh
-            if ("E_field" not in array_name) or (self.plot_E_field_vec):
-                mesh_actor = self._add_vector(mesh, array_name, label)       
+            mesh_actor = self._add_vector(mesh, array_name, label)
         else:
             print(f'Array shape not recognized ({array_name} / {label}: {mesh[array_name].shape})')
-        
-        if mesh_actor is not None:        
+
+        if mesh_actor is not None:
             self.mesh_actors.append(mesh_actor)
             # Add toggle for mesh visibility; electrodes always start visible
             self.add_toggle(label, (("boundaries" in array_name) or
                                     self.start_visible))
-    
+
     def add_threshold(self,
                       mesh: pv.PolyData,
                       array_name: str,
@@ -254,16 +275,35 @@ class MeshPlotter:
         # cycle through the vtu files
         vtu_files = []
         for filename in all_vtu_files:
-            # only plot the files that are listed in the colormaps
-            keys = [key for key in self.colormaps.keys() if key in filename]
-            if len(keys) == 0:
-                continue
-            if keys[0] == "E-field":
-                if self.plot_E_field_vec or self.plot_E_field_mag:
+            filebase = filename.split(".")[0]
+            # Add files with meshes to be plotted
+            for key in self.load_dict.keys():
+                if ((key in filebase) and self.load_dict[key]):
                     vtu_files.append(filename)
-            elif getattr(self, f"plot_{keys[0]}"):
+                    break
+            # Add files with thresholds to be plotted
+            if filebase.replace("-", "_") in self.threshold_array_name:
                 vtu_files.append(filename)
-        return vtu_files
+        return list(set(vtu_files))  # unique
+
+    def add_file(self, filepath: str) -> None:
+        mesh = pv.read(filepath)
+        for array_name in mesh.array_names:
+            # Set Label
+            label = array_name
+            if len(self.input_dirs) > 1:
+                if self.grid_plot:
+                    label = f'{label}_{self.results_count}'
+                else:
+                    # use directory name
+                    label = f'{filepath.split("/")[-2]}: {label}'
+            # Plot mesh
+            if array_name in self.plot_dict.keys() and self.plot_dict[array_name]:
+                self.add_mesh(mesh, array_name, label)
+            # if plotting a threshold VTA
+            if ((self.threshold_array_name is not None) and
+                    (array_name == self.threshold_array_name)):
+                self.add_threshold(mesh, array_name, label)
 
     def add_results_directory(self, vtu_directory: str) -> None:
         if self.grid_plot:
@@ -275,23 +315,14 @@ class MeshPlotter:
             self.subplot_scale_bar_count = 0
         self.results_count += 1
         # Get the vtu files to plot in this vtu directory
-        vtu_filenames = self._get_vtu_filenames(vtu_directory)
+        if self.input_filenames is not None:
+            vtu_filenames = self.input_filenames.copy()
+            vtu_filenames.append("electrode_1.vtu")
+        else:
+            vtu_filenames = self._get_vtu_filenames(vtu_directory)
         # Add the arrays from each file to the plotter
         for filename in vtu_filenames:
-            mesh = pv.read(f"{vtu_directory}/{filename}")
-            for array_name in mesh.array_names:
-                label = array_name
-                if len(self.input_dirs) > 1:
-                    if self.grid_plot:
-                        label = f'{label}_{self.results_count}'
-                    else:
-                        label = f'{vtu_directory.split("/")[-1]}: {label}'
-                self.add_mesh(mesh, array_name, label)
-                # if plotting a threshold VTA
-                if ((self.threshold_array_name is not None) and
-                        (array_name == self.threshold_array_name)):
-                    self.add_threshold(mesh, array_name, label)
-
+            self.add_file(os.path.join(vtu_directory, filename))
         # Title
         if (not self.grid_plot) and (len(self.input_dirs) > 1):
             title = self.input_path.split('/')[-1]
@@ -302,10 +333,12 @@ class MeshPlotter:
 
         self.plotter.show_grid()
 
-    def _recursive_dir_list(self, input_path: str) -> None:
+    def _recursive_dir_list(self,
+                            input_path: str,
+                            filename: str = 'potential.vtu') -> None:
         contents = os.listdir(input_path)
         contents.sort()
-        if "potential.vtu" in contents:
+        if filename in contents:
             self.input_dirs.append(input_path)
         else:
             dir_list = [sub for sub in contents
@@ -315,7 +348,12 @@ class MeshPlotter:
 
     def make_figure(self, input_path: str) -> None:
         self.input_path = input_path
-        self._recursive_dir_list(input_path)
+        if self.input_filenames is not None:
+            for filename in self.input_filenames:
+                self._recursive_dir_list(input_path, filename)
+        else:
+            self._recursive_dir_list(input_path)
+        self.input_dirs = list(set(self.input_dirs))  # sort and unique
         self.input_dirs.sort()
         self.plotter_init(len(self.input_dirs))
         for dir in self.input_dirs:
@@ -337,12 +375,12 @@ def create_parser() -> argparse.ArgumentParser:
     parser.add_argument("-e", "--plot_E_field_mag", action="store_true", help="Plot E-field magnitude")
     parser.add_argument("-p", "--plot_potential", action="store_true", help="Plot potential")
     parser.add_argument("-v", "--plot_VTA", action="store_true", help="Plot VTAs")
-    # parser.add_argument("-H", "--plot_Hessian", action="store_true", help="Plot Hessians (not yet implemented)")
     parser.add_argument("-i", "--start_invisible", action="store_true", help="Start with scalar meshes toggeled to invisible")
     parser.add_argument("-t", "--threshold_vta", nargs='*', default=None, help="To plot threshold VTA, provide an array_name that is being plotted, [an optional column index], and a threshold value.")
     parser.add_argument("-s", "--e_field_scale", type=float, default=1.0, help="Scale factor for E-field vectors")
     parser.add_argument("-j", "--jitter_std", type=float, default=0.0, help="Standard deviation for jittering the mesh points")
-    parser.add_argument("-o", "--opacity", type=float, default=1.0, help="Plot opacity, in [0, 1]")
+    parser.add_argument("-o", "--opacity", type=float, default=0.6, help="Plot opacity, in [0, 1]")
+    parser.add_argument("-f", "--filenames", type=str, nargs='+', default=None, help="Specify one or more mesh filenames; only these files will be read")
     return parser
 
 
@@ -354,17 +392,16 @@ def main() -> None:
     parser = create_parser()
     args = parser.parse_args()
 
-    # If not plotting any specific data, plot all
-    if np.sum([args.plot_material, args.plot_conductivity,
-               args.plot_E_field_vec, args.plot_E_field_mag,
-               # args.plot_Hessian, 
-               args.plot_potential, args.plot_VTA]) == 0:
+    # If not plotting any specific data, plot it all
+    if ((np.sum([args.plot_material, args.plot_conductivity,
+                 args.plot_E_field_vec, args.plot_E_field_mag,
+                 args.plot_potential, args.plot_VTA])==0) &
+            (args.threshold_vta is None)):
         args.plot_material = True
         args.plot_conductivity = True
         args.plot_E_field_vec = True
         args.plot_E_field_mag = True
         args.plot_potential = True
-        # args.plot_Hessian = True
         args.plot_VTA = True
 
     if args.threshold_vta is not None:
@@ -390,7 +427,6 @@ def main() -> None:
         plot_E_field_vec=args.plot_E_field_vec,
         plot_E_field_mag=args.plot_E_field_mag,
         plot_potential=args.plot_potential,
-        # plot_Hessian=args.plot_Hessian,
         plot_VTA=args.plot_VTA,
         threshold_array_name=threshold_array_name,
         threshold_component=threshold_component,
@@ -398,7 +434,8 @@ def main() -> None:
         e_field_scale=args.e_field_scale,
         jitter_std=args.jitter_std,
         opacity=args.opacity,
-        start_invisible=args.start_invisible
+        start_invisible=args.start_invisible,
+        filenames=args.filenames
     )
     plotter.make_figure(input_path=args.input_path)
 
